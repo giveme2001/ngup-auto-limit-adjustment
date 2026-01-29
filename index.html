@@ -1,0 +1,2191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGUP 자동한도조정 시뮬레이터 v2</title>
+    <meta name="description" content="주계약, 특약, 급부 관계를 고려한 자동한도조정 시뮬레이터">
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* AIA Brand Colors - Primary */
+            --aia-red: #D31145;
+            --aia-red-dark: #A50D36;
+            --aia-red-80: rgba(211, 17, 69, 0.8);
+            --aia-red-60: rgba(211, 17, 69, 0.6);
+            --aia-red-40: rgba(211, 17, 69, 0.4);
+            --aia-red-20: rgba(211, 17, 69, 0.2);
+            --aia-red-10: rgba(211, 17, 69, 0.1);
+            
+            /* AIA Charcoal */
+            --aia-charcoal: #333D47;
+            --aia-charcoal-80: rgba(51, 61, 71, 0.8);
+            --aia-charcoal-60: rgba(51, 61, 71, 0.6);
+            
+            /* AIA HNW Colors */
+            --aia-gold: #A5915C;
+            --aia-gold-60: rgba(165, 145, 92, 0.6);
+            --aia-dark-green: #68655A;
+            --aia-warm-grey: #D3CAC3;
+            
+            /* UI Colors - Light Theme */
+            --bg: #FAFAFA;
+            --bg-card: #FFFFFF;
+            --bg-elevated: #F5F5F5;
+            --text: #333D47;
+            --text-secondary: #6B7280;
+            --text-muted: #9CA3AF;
+            --border: rgba(51, 61, 71, 0.12);
+            
+            /* System Colors */
+            --success: #22C55E;
+            --success-bg: rgba(34, 197, 94, 0.1);
+            --warning: #F59E0B;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --danger: #D31145;
+            --danger-bg: rgba(211, 17, 69, 0.08);
+            --info: #3B82F6;
+            --info-bg: rgba(59, 130, 246, 0.1);
+            
+            /* Typography */
+            --font-weight-normal: 400;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+            --font-weight-bold: 700;
+            
+            /* Effects */
+            --glow: 0 4px 16px rgba(211, 17, 69, 0.2);
+            --shadow: 0 2px 12px rgba(51, 61, 71, 0.08);
+            --shadow-lg: 0 4px 20px rgba(51, 61, 71, 0.12);
+            --radius: 12px;
+            --radius-sm: 8px;
+            
+            /* Transitions */
+            --transition-fast: 0.15s ease;
+            --transition-base: 0.2s ease;
+            --transition-slow: 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Focus Styles for Accessibility */
+        *:focus-visible {
+            outline: 3px solid var(--aia-red);
+            outline-offset: 2px;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo { 
+            display: flex; 
+            align-items: center; 
+            gap: 1rem; 
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--aia-red), var(--aia-red-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: var(--glow);
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: var(--font-weight-bold);
+            color: var(--aia-charcoal);
+        }
+
+        .logo-badge { 
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: var(--font-weight-medium);
+        }
+
+        .header-actions { 
+            display: flex; 
+            gap: 0.75rem; 
+            align-items: center;
+        }
+
+        .scenario-selector {
+            padding: 0.65rem 1rem;
+            background: var(--bg-elevated);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            color: var(--text);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .scenario-selector:hover {
+            border-color: var(--aia-red);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* Alert Banner */
+        .alert-banner {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning);
+            border-radius: var(--radius);
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert-banner.hidden {
+            display: none;
+        }
+
+        .alert-icon {
+            font-size: 1.5rem;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-message {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Grid Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 1.5rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-weight: var(--font-weight-semibold);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .card-title-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .card-body { 
+            padding: 1.25rem 1.5rem; 
+        }
+        
+        .card-body.no-padding { 
+            padding: 0; 
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-elevated);
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            text-align: center;
+            transition: all var(--transition-base);
+        }
+
+        .stat-card:hover {
+            border-color: var(--aia-red-20);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: var(--font-weight-bold);
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value.danger { color: var(--danger); }
+        .stat-value.success { color: var(--success); }
+        .stat-value.warning { color: var(--warning); }
+        .stat-value.info { color: var(--info); }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: var(--font-weight-medium);
+        }
+
+        /* Quick Actions */
+        .algo-toggle-group {
+            display: flex;
+            background: var(--bg-elevated);
+            padding: 4px;
+            border-radius: var(--radius-sm);
+            gap: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 0.65rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all var(--transition-base);
+        }
+
+        .toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .toggle-btn.active {
+            background: var(--bg-card);
+            color: var(--aia-red);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-weight: var(--font-weight-bold);
+        }
+
+        /* Filter Section */
+        .filter-section {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-sm);
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.65rem 1rem;
+            padding-left: 2.5rem;
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-family: inherit;
+            color: var(--text);
+            transition: all var(--transition-base);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--aia-red);
+            box-shadow: 0 0 0 3px var(--aia-red-10);
+        }
+
+        .search-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .filter-select {
+            padding: 0.65rem 1rem;
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-family: inherit;
+            color: var(--text);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .filter-select:hover {
+            border-color: var(--aia-red);
+        }
+
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .design-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .design-table th {
+            text-align: left;
+            padding: 1rem 1.25rem;
+            background: var(--bg-elevated);
+            font-weight: var(--font-weight-semibold);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        .design-table td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .design-table tbody tr {
+            transition: background var(--transition-fast);
+        }
+
+        .design-table tbody tr:hover {
+            background: var(--bg-elevated);
+        }
+
+        .design-table tbody tr.locked {
+            background: var(--info-bg);
+        }
+
+        /* Checkbox */
+        .checkbox-cell {
+            width: 40px;
+        }
+
+        .custom-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--aia-red);
+        }
+
+        /* Rider Name */
+        .rider-info { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 0.25rem; 
+        }
+        
+        .rider-name {
+            font-weight: var(--font-weight-medium);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .rider-badge {
+            font-size: 0.65rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: var(--font-weight-bold);
+            letter-spacing: 0.02em;
+        }
+
+        .rider-badge.main { 
+            background: var(--aia-red);
+            color: white;
+        }
+        
+        .rider-badge.rider { 
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .rider-benefits {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Amount Input */
+        .amount-cell { 
+            position: relative; 
+        }
+
+        .amount-input {
+            width: 100%;
+            max-width: 160px;
+            padding: 0.65rem 1rem;
+            background: var(--bg-elevated);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text);
+            text-align: right;
+            transition: all var(--transition-base);
+        }
+
+        .amount-input:focus {
+            outline: none;
+            border-color: var(--aia-red);
+            box-shadow: 0 0 0 3px var(--aia-red-10);
+        }
+
+        .amount-input.changed {
+            border-color: var(--success);
+            background: var(--success-bg);
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.85rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: var(--font-weight-semibold);
+            white-space: nowrap;
+        }
+
+        .status-badge.ok {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .status-badge.warning {
+            background: var(--warning-bg);
+            color: var(--warning);
+        }
+
+        .status-badge.over {
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* Change Indicator */
+        .change-cell {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100%;
+        }
+
+        .change-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.35rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: var(--font-weight-semibold);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .change-badge.decrease {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .change-badge.increase {
+            background: var(--warning-bg);
+            color: var(--warning);
+        }
+
+        .change-badge.none {
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+        }
+
+        /* Action Cell */
+        .action-cell {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-base);
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-elevated);
+            border-color: var(--aia-red);
+        }
+
+        .icon-btn.locked {
+            background: var(--info-bg);
+            border-color: var(--info);
+            color: var(--info);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.85rem 1.5rem;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-weight: var(--font-weight-semibold);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--aia-red);
+            color: white;
+            box-shadow: var(--glow);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--aia-red-dark);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--aia-charcoal);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-elevated);
+        }
+
+        .btn-block { 
+            width: 100%; 
+        }
+
+        /* Sidebar */
+        .sidebar { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 1rem; 
+        }
+
+        /* Benefit Item */
+        .benefit-item {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all var(--transition-base);
+        }
+
+        .benefit-item:hover {
+            border-color: var(--aia-red-20);
+        }
+
+        .benefit-item.over {
+            border-color: var(--danger);
+            background: var(--danger-bg);
+        }
+
+        .benefit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .benefit-name { 
+            font-weight: var(--font-weight-semibold); 
+            font-size: 0.9rem; 
+        }
+
+        .benefit-percent {
+            font-size: 0.85rem;
+            font-weight: var(--font-weight-semibold);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .benefit-riders {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width var(--transition-slow);
+        }
+
+        .progress-fill.ok { background: var(--success); }
+        .progress-fill.warning { background: var(--warning); }
+        .progress-fill.over { background: var(--danger); }
+
+        .benefit-detail {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Comparison Section */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+
+        .comparison-item {
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            text-align: center;
+        }
+
+        .comparison-item.before {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+        }
+
+        .comparison-item.after {
+            background: var(--success-bg);
+            border: 1px solid var(--success);
+        }
+
+        .comparison-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .comparison-value {
+            font-size: 1.25rem;
+            font-weight: var(--font-weight-bold);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .comparison-diff {
+            text-align: center;
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: var(--danger-bg);
+            border-radius: var(--radius-sm);
+            color: var(--danger);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        /* History */
+        .history-list {
+            margin: 1rem 0;
+        }
+
+        .history-item {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            border-left: 3px solid;
+        }
+
+        .history-item.adjustment {
+            background: var(--info-bg);
+            border-color: var(--info);
+        }
+
+        .history-item.manual {
+            background: var(--warning-bg);
+            border-color: var(--warning);
+        }
+
+        .history-item.load {
+            background: var(--success-bg);
+            border-color: var(--success);
+        }
+
+        .history-time {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        /* Help Panel */
+        .help-box {
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 1rem;
+        }
+
+        .help-box.info {
+            background: var(--info-bg);
+            border: 1px solid var(--info);
+        }
+
+        .help-box.warning {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning);
+        }
+
+        .help-title {
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .help-content {
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        /* Log Container */
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .log-filters {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .log-filter-btn {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .log-filter-btn:hover {
+            background: var(--bg-elevated);
+        }
+
+        .log-filter-btn.active {
+            background: var(--aia-red);
+            color: white;
+            border-color: var(--aia-red);
+        }
+
+        .log-container {
+            max-height: 300px;
+            overflow-y: auto;
+            background: var(--aia-charcoal);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .log-item {
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            border-left: 3px solid transparent;
+            line-height: 1.4;
+        }
+
+        .log-item.info { 
+            border-left-color: var(--aia-red); 
+            background: rgba(255, 255, 255, 0.05); 
+        }
+        
+        .log-item.success { 
+            border-left-color: var(--success); 
+            color: #a3e635; 
+        }
+        
+        .log-item.warning { 
+            border-left-color: var(--warning); 
+            color: #fbbf24; 
+        }
+        
+        .log-item.error { 
+            border-left-color: var(--danger); 
+            color: #f87171; 
+        }
+        
+        .log-time { 
+            color: #888; 
+            font-size: 0.7rem; 
+            margin-right: 0.5rem; 
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--aia-charcoal);
+            color: #ffffff;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--aia-charcoal-80);
+            opacity: 0;
+            transition: all var(--transition-slow);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Meta text */
+        .meta-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Bulk Actions */
+        .bulk-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-sm);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .header-actions {
+                flex-wrap: wrap;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-section {
+                flex-direction: column;
+            }
+
+            .design-table {
+                font-size: 0.85rem;
+            }
+
+            .design-table th,
+            .design-table td {
+                padding: 0.75rem;
+            }
+
+            .amount-input {
+                max-width: 100%;
+            }
+        }
+
+        /* Hidden utility */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Screen Reader Only - visually hidden but accessible */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon" role="img" aria-label="자동한도조정 아이콘">⚡</div>
+            <span class="logo-text">자동한도조정</span>
+            <span class="logo-badge">NGUP PRE v2</span>
+        </div>
+        <div class="header-actions">
+            <select 
+                class="scenario-selector" 
+                id="scenarioSelector" 
+                onchange="switchScenario(parseInt(this.value))"
+                aria-label="시나리오 선택">
+                <option value="0">기본 시나리오</option>
+                <option value="1">실전 설계안 (종합보장)</option>
+            </select>
+            <button class="btn btn-secondary" onclick="saveData()" aria-label="현재 설계 저장">💾 저장</button>
+            <button class="btn btn-secondary" onclick="exportData()" aria-label="데이터 내보내기">📤 내보내기</button>
+            <button class="btn btn-secondary" onclick="resetToOriginal()" aria-label="원래 금액으로 복원">↩️ 원복</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Alert Banner -->
+        <div class="alert-banner hidden" id="alertBanner" role="alert" aria-live="polite">
+            <span class="alert-icon">⚠️</span>
+            <div class="alert-content">
+                <div class="alert-title">조정 권장</div>
+                <div class="alert-message" id="alertMessage"></div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value danger" id="violationCount">0</div>
+                <div class="stat-label">초과된 급부</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value warning" id="changedCount">0</div>
+                <div class="stat-label">조정된 특약</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value success" id="reductionAmount">0</div>
+                <div class="stat-label">예상 감액</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value info" id="totalPremium">0</div>
+                <div class="stat-label">월 보험료</div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <!-- Main Content -->
+            <div>
+                <!-- Quick Action Panel -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">
+                            <span class="card-title-icon">⚡</span>
+                            자동한도조정
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="algoToggleGroup" style="font-weight: var(--font-weight-semibold); font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
+                                조정 알고리즘
+                            </label>
+                            <div class="algo-toggle-group" id="algoToggleGroup" role="radiogroup" aria-label="조정 알고리즘 선택">
+                                <button 
+                                    class="toggle-btn active" 
+                                    role="radio"
+                                    aria-checked="true"
+                                    data-value="proportional" 
+                                    onclick="setAlgorithm(this, 'proportional')">
+                                    ⚖️ 비례
+                                </button>
+                                <button 
+                                    class="toggle-btn" 
+                                    role="radio"
+                                    aria-checked="false"
+                                    data-value="greedy" 
+                                    onclick="setAlgorithm(this, 'greedy')">
+                                    💰 금액순
+                                </button>
+                                <button 
+                                    class="toggle-btn" 
+                                    role="radio"
+                                    aria-checked="false"
+                                    data-value="lifo" 
+                                    onclick="setAlgorithm(this, 'lifo')">
+                                    ↩️ 역순
+                                </button>
+                            </div>
+                        </div>
+                        <button 
+                            class="btn btn-primary btn-block" 
+                            id="adjustBtn"
+                            onclick="autoAdjust()"
+                            aria-label="자동한도조정 실행">
+                            ⚡ 자동한도조정 실행
+                        </button>
+                        <p class="meta-text" style="text-align: center; margin-top: 1rem;">
+                            현재 설정된 금액을 유지하면서 초과된 급부만 자동으로 감액합니다
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Design Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">
+                            <span class="card-title-icon">📋</span>
+                            <span id="scenarioTitle">가입설계</span>
+                        </span>
+                        <span class="meta-text" id="lastUpdate"></span>
+                    </div>
+                    <div class="card-body no-padding">
+                        <!-- Filter Section -->
+                        <div class="filter-section">
+                            <div class="search-wrapper">
+                                <span class="search-icon">🔍</span>
+                                <input 
+                                    type="text" 
+                                    class="search-input" 
+                                    id="searchInput"
+                                    placeholder="특약명 검색..."
+                                    oninput="filterTable()"
+                                    aria-label="특약 검색">
+                            </div>
+                            <select 
+                                class="filter-select" 
+                                id="statusFilter"
+                                onchange="filterTable()"
+                                aria-label="상태 필터">
+                                <option value="all">전체 보기</option>
+                                <option value="over">초과만</option>
+                                <option value="normal">정상만</option>
+                            </select>
+                        </div>
+
+                        <!-- Table -->
+                        <div class="table-wrapper">
+                            <table class="design-table">
+                                <thead>
+                                    <tr>
+                                        <th class="checkbox-cell">
+                                            <input 
+                                                type="checkbox" 
+                                                class="custom-checkbox" 
+                                                id="selectAll"
+                                                onchange="toggleSelectAll(this.checked)"
+                                                aria-label="전체 선택">
+                                        </th>
+                                        <th style="width: 25%;">상품</th>
+                                        <th style="width: 15%;">가입금액</th>
+                                        <th style="width: 10%;">가입단위</th>
+                                        <th style="width: 10%;">보험기간</th>
+                                        <th style="width: 10%;">보험료</th>
+                                        <th style="width: 10%;">상태</th>
+                                        <th style="width: 10%;">조정</th>
+                                        <th style="width: 10%;">작업</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="designTable"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Bulk Actions -->
+                        <div class="bulk-actions">
+                            <button class="btn btn-secondary" onclick="lockSelected()" aria-label="선택 항목 잠금">
+                                🔒 선택 항목 잠금
+                            </button>
+                            <button class="btn btn-secondary" onclick="unlockSelected()" aria-label="선택 항목 잠금 해제">
+                                🔓 잠금 해제
+                            </button>
+                            <button class="btn btn-secondary" onclick="resetSelected()" aria-label="선택 항목 초기화">
+                                ↩️ 선택 항목 초기화
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Benefits -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">
+                            <span class="card-title-icon">🎯</span>
+                            급부별 한도
+                        </span>
+                    </div>
+                    <div class="card-body" id="benefitsList"></div>
+                </div>
+
+                <!-- Comparison -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">
+                            <span class="card-title-icon">📊</span>
+                            조정 전후 비교
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="comparison-grid">
+                            <div class="comparison-item before">
+                                <div class="comparison-label">조정 전</div>
+                                <div class="comparison-value" id="beforeTotal">-</div>
+                            </div>
+                            <div class="comparison-item after">
+                                <div class="comparison-label">조정 후</div>
+                                <div class="comparison-value" id="afterTotal">-</div>
+                            </div>
+                        </div>
+                        <div class="comparison-diff" id="totalDiff">변경 없음</div>
+                    </div>
+                </div>
+
+                <!-- History -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">
+                            <span class="card-title-icon">📜</span>
+                            변경 이력
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="history-list" id="historyList">
+                            <div class="meta-text" style="text-align: center; padding: 2rem 0;">
+                                이력이 없습니다
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">
+                            <span class="card-title-icon">💡</span>
+                            도움말
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="help-box info">
+                            <div class="help-title">💡 알고리즘 가이드</div>
+                            <div class="help-content">
+                                <strong>비례:</strong> 모든 특약을 공평하게 조정<br>
+                                <strong>금액순:</strong> 큰 금액 특약 우선 감액<br>
+                                <strong>역순:</strong> 최근 추가 특약부터 감액
+                            </div>
+                        </div>
+                        <div class="help-box warning">
+                            <div class="help-title">⚠️ 주의사항</div>
+                            <div class="help-content">
+                                주계약은 자동 조정 대상에서 제외됩니다. 최소 가입금액 미만으로는 조정되지 않습니다.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logs -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">
+                            <span class="card-title-icon">📝</span>
+                            조정 상세 내역
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="log-header">
+                            <div class="log-filters">
+                                <button class="log-filter-btn active" onclick="filterLogs('all')" aria-label="전체 로그 보기">전체</button>
+                                <button class="log-filter-btn" onclick="filterLogs('error')" aria-label="오류 로그만 보기">오류만</button>
+                                <button class="log-filter-btn" onclick="clearLogs()" aria-label="로그 지우기">지우기</button>
+                            </div>
+                        </div>
+                        <div class="log-container" id="logContainer" role="log" aria-live="polite" aria-atomic="false">
+                            <div class="log-item info">자동한도조정 대기 중...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <span id="toastIcon">✅</span>
+        <span id="toastMessage">자동한도조정 완료</span>
+    </div>
+
+    <script>
+        // ============================================================
+        // 자동한도조정 엔진 v2.5 (Enhanced with History & Locking)
+        // ============================================================
+
+        const scenarios = [
+            {
+                id: 0,
+                name: '기본 시나리오 (Basic)',
+                data: {
+                    riders: [
+                        { id: 'P001', name: '무배당 하이라이프', type: 'main', amount: 100000000, min: 50000000, max: 200000000, unit: 10000000, benefits: [], period: '100세', payPeriod: '20년', premium: 125000 },
+                        { id: 'R001', name: '암진단특약', type: 'rider', amount: 50000000, min: 10000000, max: 100000000, unit: 10000000, benefits: ['B001', 'B002'], period: '80세', payPeriod: '20년', premium: 45000 },
+                        { id: 'R002', name: '뇌출혈진단특약', type: 'rider', amount: 30000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['B001', 'B003'], period: '80세', payPeriod: '20년', premium: 23000 },
+                        { id: 'R003', name: '급성심근경색특약', type: 'rider', amount: 30000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['B001', 'B004'], period: '80세', payPeriod: '20년', premium: 21000 },
+                        { id: 'R004', name: '수술보장특약', type: 'rider', amount: 20000000, min: 5000000, max: 30000000, unit: 5000000, benefits: ['B005'], period: '80세', payPeriod: '20년', premium: 18000 },
+                        { id: 'R005', name: '입원일당특약', type: 'rider', amount: 50000, min: 10000, max: 100000, unit: 10000, benefits: ['B006'], period: '80세', payPeriod: '20년', premium: 32000 },
+                    ],
+                    benefits: [
+                        { id: 'B001', name: 'CI 급부', cap: 100000000 },
+                        { id: 'B002', name: '암 급부', cap: 80000000 },
+                        { id: 'B003', name: '뇌혈관 급부', cap: 50000000 },
+                        { id: 'B004', name: '심장 급부', cap: 50000000 },
+                        { id: 'B005', name: '수술 급부', cap: 30000000 },
+                        { id: 'B006', name: '입원 급부', cap: 100000 },
+                    ]
+                }
+            },
+            {
+                id: 1,
+                name: '실전 설계안 (종합보장)',
+                data: {
+                    riders: [
+                        { id: 'M001', name: '무배당 AIA 내가 조립하는 종합보장보험', type: 'main', amount: 50000000, min: 10000000, max: 100000000, unit: 10000000, benefits: [], period: '90세', payPeriod: '20년', premium: 55000 },
+                        { id: 'T001', name: '무배당 AIA Vitality 암진단특약', type: 'rider', amount: 50000000, min: 10000000, max: 100000000, unit: 10000000, benefits: ['BEN_CANCER_TOTAL', 'BEN_GEN_CANCER'], period: '90세', payPeriod: '20년', premium: 65000 },
+                        { id: 'T002', name: '무배당 암진단특약(일반)', type: 'rider', amount: 30000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['BEN_CANCER_TOTAL', 'BEN_GEN_CANCER'], period: '90세', payPeriod: '20년', premium: 35000 },
+                        { id: 'T003', name: '무배당 대장점막내암진단특약', type: 'rider', amount: 20000000, min: 2000000, max: 20000000, unit: 1000000, benefits: ['BEN_CANCER_TOTAL'], period: '90세', payPeriod: '20년', premium: 8000 },
+                        { id: 'T004', name: '무배당 뇌혈관질환특약', type: 'rider', amount: 30000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['BEN_2DAE', 'BEN_BRAIN'], period: '90세', payPeriod: '20년', premium: 42000 },
+                        { id: 'T005', name: '무배당 허혈성심장질환진단특약', type: 'rider', amount: 30000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['BEN_2DAE', 'BEN_HEART'], period: '90세', payPeriod: '20년', premium: 38000 },
+                        { id: 'T006', name: '무배당 수술특약(1-5종)', type: 'rider', amount: 10000000, min: 1000000, max: 20000000, unit: 1000000, benefits: ['BEN_SURGERY'], period: '90세', payPeriod: '20년', premium: 15000 },
+                        { id: 'T007', name: '무배당 대수술특약', type: 'rider', amount: 20000000, min: 5000000, max: 30000000, unit: 5000000, benefits: ['BEN_SURGERY'], period: '90세', payPeriod: '20년', premium: 12000 },
+                    ],
+                    benefits: [
+                        { id: 'BEN_CANCER_TOTAL', name: '암 진단 합산', cap: 70000000 },
+                        { id: 'BEN_GEN_CANCER', name: '일반암 진단', cap: 60000000 },
+                        { id: 'BEN_2DAE', name: '2대질환 진단', cap: 50000000 },
+                        { id: 'BEN_BRAIN', name: '뇌혈관 진단', cap: 50000000 },
+                        { id: 'BEN_HEART', name: '심혈관 진단', cap: 50000000 },
+                        { id: 'BEN_SURGERY', name: '수술 보장', cap: 25000000 },
+                    ]
+                }
+            }
+        ];
+
+        let currentScenarioIdx = 0;
+        let riders = [];
+        let benefits = [];
+        let originalAmounts = {};
+        let preAdjustAmounts = {};
+        let selectedRiders = new Set();
+        let lockedRiders = new Set();
+        let history = [];
+        let logs = [];
+        let logFilter = 'all';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            switchScenario(0);
+        });
+
+        function switchScenario(idx) {
+            currentScenarioIdx = idx;
+            const scenario = scenarios[idx];
+            
+            document.getElementById('scenarioSelector').value = idx;
+            document.getElementById('scenarioTitle').textContent = scenario.name;
+            
+            riders = JSON.parse(JSON.stringify(scenario.data.riders));
+            benefits = JSON.parse(JSON.stringify(scenario.data.benefits));
+            
+            originalAmounts = {};
+            riders.forEach(r => originalAmounts[r.id] = r.amount);
+            preAdjustAmounts = {};
+            selectedRiders.clear();
+            lockedRiders.clear();
+            
+            addHistory('load', `${scenario.name} 로드됨`);
+            resetLogs();
+            
+            render();
+            showToast('🔄', `${scenario.name} 로드됨`);
+        }
+
+        function render() {
+            renderTable();
+            renderBenefits();
+            updateStats();
+            updateComparison();
+            renderHistory();
+            renderLogs();
+            updateAlertBanner();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('designTable');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            const filteredRiders = riders.filter(r => {
+                const matchesSearch = r.name.toLowerCase().includes(searchTerm);
+                if (!matchesSearch) return false;
+                
+                if (statusFilter === 'all') return true;
+                
+                const status = getStatus(r);
+                if (statusFilter === 'over') return status.class === 'over';
+                if (statusFilter === 'normal') return status.class === 'ok';
+                
+                return true;
+            });
+            
+            tbody.innerHTML = filteredRiders.map(r => {
+                const status = getStatus(r);
+                const change = getChange(r);
+                const isSelected = selectedRiders.has(r.id);
+                const isLocked = lockedRiders.has(r.id);
+                const benefitNames = r.benefits.map(bid => {
+                    const b = benefits.find(b => b.id === bid);
+                    return b ? b.name : '';
+                }).join(', ');
+                
+                return `
+                    <tr class="${isLocked ? 'locked' : ''}" data-rider-id="${r.id}">
+                        <td class="checkbox-cell">
+                            <input 
+                                type="checkbox" 
+                                class="custom-checkbox rider-checkbox" 
+                                ${isSelected ? 'checked' : ''}
+                                onchange="toggleRiderSelection('${r.id}', this.checked)"
+                                aria-label="${r.name} 선택">
+                        </td>
+                        <td>
+                            <div class="rider-info">
+                                <div class="rider-name">
+                                    <span class="rider-badge ${r.type}">${r.type === 'main' ? '주' : '특'}</span>
+                                    ${r.name}
+                                    ${isLocked ? '🔒' : ''}
+                                </div>
+                                ${benefitNames ? `<div class="rider-benefits">${benefitNames}</div>` : ''}
+                            </div>
+                        </td>
+                        <td class="amount-cell">
+                            <input 
+                                type="text" 
+                                class="amount-input ${change.hasChanged ? 'changed' : ''}" 
+                                value="${formatAmount(r.amount)}" 
+                                onfocus="onAmountFocus(this, '${r.id}')"
+                                onblur="onAmountBlur(this, '${r.id}')"
+                                onkeydown="if(event.key==='Enter'){this.blur();}"
+                                ${isLocked ? 'disabled' : ''}
+                                aria-label="${r.name} 가입금액"
+                                aria-describedby="amount-help-${r.id}"
+                                title="최소: ${formatAmount(r.min)} / 최대: ${formatAmount(r.max)} / 단위: ${formatAmount(r.unit)}">
+                            <span class="sr-only" id="amount-help-${r.id}">
+                                최소 ${formatAmount(r.min)}, 최대 ${formatAmount(r.max)}, 단위 ${formatAmount(r.unit)}
+                            </span>
+                        </td>
+                        <td class="meta-text">${formatAmountShort(r.unit)}</td>
+                        <td class="meta-text">${r.period}</td>
+                        <td class="meta-text">${r.premium.toLocaleString()}원</td>
+                        <td>
+                            <span class="status-badge ${status.class}" role="status" aria-label="${status.ariaLabel}">
+                                <span class="status-dot"></span>
+                                ${status.text}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="change-cell">
+                                ${change.html}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-cell">
+                                <button 
+                                    class="icon-btn ${isLocked ? 'locked' : ''}" 
+                                    onclick="toggleLock('${r.id}')"
+                                    aria-label="${isLocked ? r.name + ' 잠금 해제' : r.name + ' 잠금'}"
+                                    title="${isLocked ? '잠금 해제' : '잠금'}">
+                                    ${isLocked ? '🔒' : '🔓'}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getStatus(rider) {
+            if (rider.benefits.length === 0) {
+                return { 
+                    class: 'ok', 
+                    text: '정상',
+                    ariaLabel: '정상 상태'
+                };
+            }
+            
+            for (const bid of rider.benefits) {
+                const benefit = benefits.find(b => b.id === bid);
+                if (!benefit) continue;
+                
+                const total = calculateBenefitTotal(bid);
+                if (total > benefit.cap) {
+                    const excess = total - benefit.cap;
+                    return { 
+                        class: 'over', 
+                        text: `+${formatAmountShort(excess)} 초과`,
+                        ariaLabel: `${formatAmountShort(excess)} 초과`
+                    };
+                }
+            }
+            
+            return { 
+                class: 'ok', 
+                text: '정상',
+                ariaLabel: '정상 상태'
+            };
+        }
+
+        function getChange(rider) {
+            const original = preAdjustAmounts[rider.id] || originalAmounts[rider.id];
+            const diff = rider.amount - original;
+            const hasChanged = preAdjustAmounts[rider.id] !== undefined && diff !== 0;
+            
+            if (!hasChanged) {
+                return { hasChanged: false, html: '<span class="change-badge none">—</span>' };
+            }
+            
+            if (diff < 0) {
+                return { 
+                    hasChanged: true, 
+                    html: `<span class="change-badge decrease" role="status">▼ ${formatAmountShort(Math.abs(diff))}</span>` 
+                };
+            } else {
+                return { 
+                    hasChanged: true, 
+                    html: `<span class="change-badge increase" role="status">▲ ${formatAmountShort(diff)}</span>` 
+                };
+            }
+        }
+
+        function renderBenefits() {
+            const container = document.getElementById('benefitsList');
+            container.innerHTML = benefits.map(b => {
+                const total = calculateBenefitTotal(b.id);
+                const pct = (total / b.cap) * 100;
+                const isOver = total > b.cap;
+                const progressClass = pct > 100 ? 'over' : pct > 80 ? 'warning' : 'ok';
+                
+                const linkedRiders = riders
+                    .filter(r => r.benefits.includes(b.id))
+                    .map(r => r.name)
+                    .join(', ');
+                
+                return `
+                    <div class="benefit-item ${isOver ? 'over' : ''}" role="region" aria-label="${b.name} 사용 현황">
+                        <div class="benefit-header">
+                            <span class="benefit-name">${b.name}</span>
+                            <span class="benefit-percent" style="color: var(--${progressClass === 'ok' ? 'success' : progressClass === 'warning' ? 'warning' : 'danger'})">${pct.toFixed(0)}%</span>
+                        </div>
+                        <div class="progress-bar" role="progressbar" aria-valuenow="${Math.min(pct, 100)}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-fill ${progressClass}" style="width: ${Math.min(pct, 100)}%"></div>
+                        </div>
+                        <div class="benefit-detail">
+                            <span>현재: ${formatAmountShort(total)}</span>
+                            <span>한도: ${formatAmountShort(b.cap)}</span>
+                        </div>
+                        ${linkedRiders ? `<div class="benefit-riders">관련: ${linkedRiders}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            const violations = benefits.filter(b => calculateBenefitTotal(b.id) > b.cap).length;
+            document.getElementById('violationCount').textContent = violations;
+            document.getElementById('violationCount').className = `stat-value ${violations > 0 ? 'danger' : 'success'}`;
+            
+            const changed = riders.filter(r => preAdjustAmounts[r.id] !== undefined && r.amount !== preAdjustAmounts[r.id]).length;
+            document.getElementById('changedCount').textContent = changed;
+            
+            const totalReduction = riders.reduce((sum, r) => {
+                const original = preAdjustAmounts[r.id] || r.amount;
+                return sum + Math.max(0, original - r.amount);
+            }, 0);
+            document.getElementById('reductionAmount').textContent = formatAmountShort(totalReduction);
+            
+            const totalPremium = riders.reduce((sum, r) => sum + r.premium, 0);
+            document.getElementById('totalPremium').textContent = totalPremium.toLocaleString();
+        }
+
+        function updateComparison() {
+            const beforeTotal = riders.reduce((sum, r) => sum + (preAdjustAmounts[r.id] || r.amount), 0);
+            const afterTotal = riders.reduce((sum, r) => sum + r.amount, 0);
+            const diff = beforeTotal - afterTotal;
+            
+            document.getElementById('beforeTotal').textContent = formatAmountShort(beforeTotal);
+            document.getElementById('afterTotal').textContent = formatAmountShort(afterTotal);
+            
+            const diffEl = document.getElementById('totalDiff');
+            if (diff === 0) {
+                diffEl.textContent = '변경 없음';
+                diffEl.style.background = 'var(--bg-elevated)';
+                diffEl.style.color = 'var(--text-muted)';
+            } else if (diff > 0) {
+                diffEl.textContent = `▼ ${formatAmountShort(diff)} 감액`;
+                diffEl.style.background = 'var(--danger-bg)';
+                diffEl.style.color = 'var(--danger)';
+            } else {
+                diffEl.textContent = `▲ ${formatAmountShort(Math.abs(diff))} 증액`;
+                diffEl.style.background = 'var(--warning-bg)';
+                diffEl.style.color = 'var(--warning)';
+            }
+        }
+
+        function updateAlertBanner() {
+            const violations = benefits.filter(b => {
+                const total = calculateBenefitTotal(b.id);
+                return total > b.cap;
+            });
+            
+            const banner = document.getElementById('alertBanner');
+            const message = document.getElementById('alertMessage');
+            
+            if (violations.length > 0) {
+                const first = violations[0];
+                const total = calculateBenefitTotal(first.id);
+                const excess = total - first.cap;
+                message.textContent = `'${first.name}' 급부가 ${formatAmountShort(first.cap)} 한도를 ${formatAmountShort(excess)} 초과했습니다.`;
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        function calculateBenefitTotal(benefitId) {
+            return riders
+                .filter(r => r.benefits.includes(benefitId))
+                .reduce((sum, r) => sum + r.amount, 0);
+        }
+
+        // Selection & Locking
+        function toggleRiderSelection(riderId, checked) {
+            if (checked) {
+                selectedRiders.add(riderId);
+            } else {
+                selectedRiders.delete(riderId);
+            }
+            updateSelectAllCheckbox();
+        }
+
+        function toggleSelectAll(checked) {
+            selectedRiders.clear();
+            if (checked) {
+                riders.forEach(r => selectedRiders.add(r.id));
+            }
+            render();
+        }
+
+        function updateSelectAllCheckbox() {
+            const selectAll = document.getElementById('selectAll');
+            if (selectAll) {
+                selectAll.checked = selectedRiders.size === riders.length && riders.length > 0;
+            }
+        }
+
+        function toggleLock(riderId) {
+            if (lockedRiders.has(riderId)) {
+                lockedRiders.delete(riderId);
+                showToast('🔓', '잠금 해제됨');
+            } else {
+                lockedRiders.add(riderId);
+                showToast('🔒', '잠금 설정됨');
+            }
+            render();
+        }
+
+        function lockSelected() {
+            if (selectedRiders.size === 0) {
+                showToast('⚠️', '선택된 특약이 없습니다');
+                return;
+            }
+            selectedRiders.forEach(id => lockedRiders.add(id));
+            showToast('🔒', `${selectedRiders.size}개 특약 잠금됨`);
+            render();
+        }
+
+        function unlockSelected() {
+            if (selectedRiders.size === 0) {
+                showToast('⚠️', '선택된 특약이 없습니다');
+                return;
+            }
+            selectedRiders.forEach(id => lockedRiders.delete(id));
+            showToast('🔓', `${selectedRiders.size}개 특약 잠금 해제됨`);
+            render();
+        }
+
+        function resetSelected() {
+            if (selectedRiders.size === 0) {
+                showToast('⚠️', '선택된 특약이 없습니다');
+                return;
+            }
+            
+            if (!confirm(`선택한 ${selectedRiders.size}개 특약을 원래 금액으로 복원하시겠습니까?`)) {
+                return;
+            }
+            
+            selectedRiders.forEach(id => {
+                const rider = riders.find(r => r.id === id);
+                if (rider) {
+                    rider.amount = originalAmounts[id];
+                }
+            });
+            
+            addHistory('manual', `${selectedRiders.size}개 특약 초기화`);
+            render();
+            showToast('↩️', `${selectedRiders.size}개 특약 초기화됨`);
+        }
+
+        // Filter
+        function filterTable() {
+            render();
+        }
+
+        // Algorithm
+        let currentAlgo = 'proportional';
+
+        function setAlgorithm(btn, algo) {
+            currentAlgo = algo;
+            document.querySelectorAll('.toggle-btn').forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-checked', 'false');
+            });
+            btn.classList.add('active');
+            btn.setAttribute('aria-checked', 'true');
+        }
+
+        // Auto Adjust
+        function autoAdjust() {
+            const adjustBtn = document.getElementById('adjustBtn');
+            adjustBtn.disabled = true;
+            adjustBtn.innerHTML = '<span class="spinner"></span> 조정 중...';
+            
+            preAdjustAmounts = {};
+            riders.forEach(r => preAdjustAmounts[r.id] = r.amount);
+            
+            resetLogs();
+            
+            let iterations = 0;
+            const maxIter = 100;
+            const algoName = currentAlgo === 'greedy' ? 'Greedy (금액순)' : currentAlgo === 'lifo' ? 'LIFO (역순)' : '비례 감액';
+            
+            addLog(`자동한도조정 시작 (방법: ${algoName})`, 'info');
+            
+            setTimeout(() => {
+                while (iterations < maxIter) {
+                    const violation = findViolation();
+                    if (!violation) break;
+                    
+                    const { benefitId, excess } = violation;
+                    const benefitName = benefits.find(b => b.id === benefitId)?.name;
+                    const benefitCap = benefits.find(b => b.id === benefitId)?.cap;
+                    const currentTotal = calculateBenefitTotal(benefitId);
+                    
+                    addLog(`[문제 정의] '${benefitName}' 한도 초과! (한도: ${formatAmountShort(benefitCap)} / 현재: ${formatAmountShort(currentTotal)} / 초과: +${formatAmountShort(excess)})`, 'warning');
+                    
+                    let hasChanged = false;
+
+                    if (currentAlgo === 'greedy') {
+                        hasChanged = resolveViolationGreedy(benefitId, excess, benefitName);
+                    } else if (currentAlgo === 'lifo') {
+                        hasChanged = resolveViolationLIFO(benefitId, excess, benefitName);
+                    } else {
+                        hasChanged = resolveViolationProportional(benefitId, excess, benefitName);
+                    }
+                    
+                    if (!hasChanged) {
+                        addLog(`=> ⚠️ 더 이상 감액할 수 있는 특약이 없습니다. (최소가입금액 또는 잠금)`, 'error');
+                        break;
+                    }
+                    
+                    iterations++;
+                }
+                
+                const changedCount = riders.filter(r => preAdjustAmounts[r.id] !== r.amount).length;
+                
+                if (changedCount > 0) {
+                    addLog(`✅ 조정 완료: 총 ${changedCount}개 특약 감액 처리됨`, 'success');
+                    addHistory('adjustment', `${algoName} 실행 (${changedCount}개 특약 조정)`);
+                    showToast('✅', `자동한도조정 완료! ${changedCount}개 특약 조정됨`);
+                } else {
+                    addLog(`✅ 조정 불필요: 모든 급부가 한도 내에 있습니다.`, 'success');
+                    showToast('✅', '조정 불필요 - 모든 급부가 정상 범위입니다');
+                }
+                
+                adjustBtn.disabled = false;
+                adjustBtn.innerHTML = '⚡ 자동한도조정 실행';
+                render();
+            }, 100);
+        }
+
+        function findViolation() {
+            for (const b of benefits) {
+                const total = calculateBenefitTotal(b.id);
+                if (total > b.cap) {
+                    return { benefitId: b.id, excess: total - b.cap };
+                }
+            }
+            return null;
+        }
+
+        function resolveViolationProportional(benefitId, excess, benefitName) {
+            const linkedRiders = riders
+                .filter(r => r.benefits.includes(benefitId) && r.type === 'rider' && r.amount > r.min && !lockedRiders.has(r.id));
+            
+            if (linkedRiders.length === 0) {
+                addLog(`   => 감액 대상 특약 없음 (모두 최소가입금액 도달 또는 잠금)`, 'error');
+                return false;
+            }
+            
+            const contributions = {};
+            let totalContribution = 0;
+            for (const rider of linkedRiders) {
+                contributions[rider.id] = rider.amount;
+                totalContribution += rider.amount;
+            }
+            
+            addLog(`   => [분석] 감액 대상 ${linkedRiders.length}개 발견 (총 기여금액: ${formatAmountShort(totalContribution)})`, 'info');
+            
+            if (totalContribution === 0) return false;
+            
+            let remaining = excess;
+            let hasChanged = false;
+            
+            for (const rider of linkedRiders) {
+                if (remaining <= 0) break;
+                const ratio = contributions[rider.id] / totalContribution;
+                let targetReduce = Math.floor(excess * ratio);
+                
+                const reducible = rider.amount - rider.min;
+                let reduceAmount = Math.min(targetReduce, reducible);
+                
+                let actualReduce = 0;
+                if (rider.unit > 0) {
+                    const unitsNeeded = Math.ceil(reduceAmount / rider.unit);
+                    actualReduce = unitsNeeded * rider.unit;
+                } else {
+                    actualReduce = reduceAmount;
+                }
+                actualReduce = Math.min(actualReduce, reducible);
+                
+                if (actualReduce > 0) {
+                    applyReduction(rider, actualReduce, `비례(${(ratio * 100).toFixed(1)}%)`);
+                    remaining -= actualReduce;
+                    hasChanged = true;
+                }
+            }
+            
+            if (remaining > 0) {
+                addLog(`   => [잔여] 비례 배분 후 잔여 초과분 ${formatAmountShort(remaining)} 처리 시작`, 'info');
+                for (const rider of linkedRiders) {
+                    if (remaining <= 0) break;
+                    const reducible = rider.amount - rider.min;
+                    if (reducible <= 0) continue;
+                    
+                    const unitsNeeded = Math.ceil(remaining / rider.unit);
+                    let actualReduce = Math.min(unitsNeeded * rider.unit, reducible);
+                    
+                    if (actualReduce > 0) {
+                        applyReduction(rider, actualReduce, `잔여분 추가 감액`);
+                        remaining -= actualReduce;
+                        hasChanged = true;
+                    }
+                }
+            }
+            return hasChanged;
+        }
+
+        function resolveViolationGreedy(benefitId, excess, benefitName) {
+            const linkedRiders = riders
+                .filter(r => r.benefits.includes(benefitId) && r.type === 'rider' && r.amount > r.min && !lockedRiders.has(r.id))
+                .sort((a, b) => {
+                    const unitA = a.unit > 0 ? a.unit : 1;
+                    const unitB = b.unit > 0 ? b.unit : 1;
+                    
+                    const efficiencyA = Math.floor((a.amount - a.min) / unitA);
+                    const efficiencyB = Math.floor((b.amount - b.min) / unitB);
+                    
+                    if (efficiencyA !== efficiencyB) return efficiencyB - efficiencyA;
+                    if (a.amount !== b.amount) return b.amount - a.amount;
+                    
+                    return 0;
+                });
+
+            if (linkedRiders.length === 0) {
+                addLog(`   => 감액 대상 특약 없음`, 'error');
+                return false;
+            }
+            
+            const topRider = linkedRiders[0];
+            const topEff = Math.floor((topRider.amount - topRider.min) / (topRider.unit || 1));
+            addLog(`   => [분석] 감액 효율이 가장 높은 '${topRider.name}'(E=${topEff}) 선택`, 'info');
+
+            let remaining = excess;
+            let hasChanged = false;
+
+            for (const rider of linkedRiders) {
+                if (remaining <= 0) break;
+
+                const reducible = rider.amount - rider.min;
+                let targetReduce = Math.min(remaining, reducible);
+
+                let actualReduce = 0;
+                if (rider.unit > 0) {
+                    const unitsNeeded = Math.ceil(targetReduce / rider.unit);
+                    actualReduce = unitsNeeded * rider.unit;
+                } else {
+                    actualReduce = targetReduce;
+                }
+                actualReduce = Math.min(actualReduce, reducible); 
+
+                if (actualReduce > 0) {
+                    applyReduction(rider, actualReduce, `금액순 우선`);
+                    remaining -= actualReduce;
+                    hasChanged = true;
+                }
+            }
+            return hasChanged;
+        }
+
+        function resolveViolationLIFO(benefitId, excess, benefitName) {
+            const linkedRiders = riders
+                .filter(r => r.benefits.includes(benefitId) && r.type === 'rider' && r.amount > r.min && !lockedRiders.has(r.id))
+                .reverse(); 
+
+            if (linkedRiders.length === 0) return false;
+
+            addLog(`   => [분석] 가장 나중 특약 '${linkedRiders[0].name}' 선택`, 'info');
+
+            let remaining = excess;
+            let hasChanged = false;
+
+            for (const rider of linkedRiders) {
+                if (remaining <= 0) break;
+
+                const reducible = rider.amount - rider.min;
+                let targetReduce = Math.min(remaining, reducible);
+
+                let actualReduce = 0;
+                if (rider.unit > 0) {
+                    const unitsNeeded = Math.ceil(targetReduce / rider.unit);
+                    actualReduce = unitsNeeded * rider.unit;
+                } else {
+                    actualReduce = targetReduce;
+                }
+                actualReduce = Math.min(actualReduce, reducible);
+
+                if (actualReduce > 0) {
+                    applyReduction(rider, actualReduce, `역순 원칙`);
+                    remaining -= actualReduce;
+                    hasChanged = true;
+                }
+            }
+            return hasChanged;
+        }
+
+        function applyReduction(rider, amount, reason) {
+            const before = rider.amount;
+            rider.amount -= amount;
+            addLog(`   -> [실행] ${rider.name}: ${formatAmountShort(amount)} 감액 (${reason})`, 'success');
+            addLog(`      (결과: ${formatAmountShort(before)} → ${formatAmountShort(rider.amount)})`, 'info');
+        }
+
+        // Amount Update
+        function updateAmount(riderId, value) {
+            const rider = riders.find(r => r.id === riderId);
+            if (!rider) return;
+            
+            let numValue = parseAmountInput(value);
+            if (isNaN(numValue) || numValue <= 0) {
+                render();
+                return;
+            }
+            
+            let adjusted = Math.max(rider.min, Math.min(rider.max, numValue));
+            adjusted = Math.round(adjusted / rider.unit) * rider.unit;
+            
+            const before = rider.amount;
+            rider.amount = adjusted;
+            
+            if (before !== adjusted) {
+                addHistory('manual', `${rider.name}: ${formatAmountShort(before)} → ${formatAmountShort(adjusted)}`);
+            }
+            
+            render();
+        }
+
+        function parseAmountInput(value) {
+            const str = value.toString().trim();
+            if (str.includes('억')) return parseFloat(str.replace(/[^0-9.]/g, '')) * 100000000;
+            if (str.includes('만')) return parseFloat(str.replace(/[^0-9.]/g, '')) * 10000;
+            return parseInt(str.replace(/[^0-9]/g, ''));
+        }
+
+        function onAmountFocus(input, riderId) {
+            const rider = riders.find(r => r.id === riderId);
+            if (rider) {
+                input.value = rider.amount;
+                input.select();
+            }
+        }
+
+        function onAmountBlur(input, riderId) {
+            updateAmount(riderId, input.value);
+        }
+
+        // History
+        function addHistory(type, message) {
+            const time = new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' });
+            history.unshift({ type, message, time });
+            if (history.length > 20) history = history.slice(0, 20);
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            if (history.length === 0) {
+                container.innerHTML = '<div class="meta-text" style="text-align: center; padding: 2rem 0;">이력이 없습니다</div>';
+                return;
+            }
+            
+            container.innerHTML = history.map(h => `
+                <div class="history-item ${h.type}">
+                    <div class="history-time">${h.time}</div>
+                    <div>${h.message}</div>
+                </div>
+            `).join('');
+        }
+
+        // Logs
+        function addLog(msg, type = 'info') {
+            const time = new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            logs.push({ time, msg, type });
+        }
+
+        function resetLogs() {
+            logs = [];
+            renderLogs();
+        }
+
+        function renderLogs() {
+            const container = document.getElementById('logContainer');
+            if (!container) return;
+            
+            const filteredLogs = logFilter === 'all' ? logs : logs.filter(l => l.type === logFilter);
+            
+            if (filteredLogs.length === 0) {
+                container.innerHTML = '<div class="log-item info">로그가 없습니다</div>';
+                return;
+            }
+            
+            container.innerHTML = filteredLogs.map(log => `
+                <div class="log-item ${log.type}">
+                    <span class="log-time">${log.time}</span>
+                    ${log.msg}
+                </div>
+            `).join('');
+            
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function filterLogs(filter) {
+            logFilter = filter;
+            document.querySelectorAll('.log-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            renderLogs();
+        }
+
+        function clearLogs() {
+            if (confirm('로그를 모두 지우시겠습니까?')) {
+                resetLogs();
+                showToast('🗑️', '로그가 지워졌습니다');
+            }
+        }
+
+        // Save & Export
+        function saveData() {
+            const data = {
+                scenario: currentScenarioIdx,
+                riders: riders,
+                lockedRiders: Array.from(lockedRiders),
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem('autoAdjusterData', JSON.stringify(data));
+            showToast('💾', '저장되었습니다');
+        }
+
+        function exportData() {
+            const data = {
+                scenario: scenarios[currentScenarioIdx].name,
+                riders: riders.map(r => ({
+                    name: r.name,
+                    amount: r.amount,
+                    premium: r.premium
+                })),
+                benefits: benefits.map(b => ({
+                    name: b.name,
+                    current: calculateBenefitTotal(b.id),
+                    cap: b.cap
+                })),
+                timestamp: new Date().toLocaleString('ko-KR')
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `auto-adjuster-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('📤', '데이터가 내보내졌습니다');
+        }
+
+        function resetToOriginal() {
+            if (!confirm('모든 특약을 원래 금액으로 복원하시겠습니까?')) {
+                return;
+            }
+            
+            const scenario = scenarios[currentScenarioIdx];
+            riders = JSON.parse(JSON.stringify(scenario.data.riders));
+            preAdjustAmounts = {};
+            selectedRiders.clear();
+            
+            addHistory('load', '원래 금액으로 복원됨');
+            render();
+            showToast('↩️', '원래 금액으로 복원되었습니다');
+        }
+
+        // Formatting
+        function formatAmount(amount) {
+            if (amount >= 100000000) return (amount / 100000000).toFixed(0) + '억';
+            if (amount >= 10000) return (amount / 10000).toLocaleString() + '만원';
+            return amount.toLocaleString() + '원';
+        }
+
+        function formatAmountShort(amount) {
+            if (amount >= 100000000) return (amount / 100000000).toFixed(1) + '억';
+            if (amount >= 10000) return (amount / 10000).toLocaleString() + '만';
+            return amount.toLocaleString();
+        }
+
+        // Toast
+        function showToast(icon, message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastIcon').textContent = icon;
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
