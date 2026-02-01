@@ -37,6 +37,10 @@
             --text-muted: #9CA3AF;
             --border: rgba(51, 61, 71, 0.12);
             
+            /* Layout Sizes */
+            --header-height: 80px; /* 고정 헤더 높이 대폭 축소 */
+            --sidebar-top: 100px;
+            
             /* System Colors */
             --success: #22C55E;
             --success-bg: rgba(34, 197, 94, 0.1);
@@ -121,13 +125,36 @@
         }
 
         .logo-badge { 
-            background: var(--bg-elevated);
+            background: var(--aia-red-10); 
+            color: var(--aia-red); 
+            padding: 0.2rem 0.6rem; 
+            border-radius: 100px; 
+            font-size: 0.7rem; 
+            font-weight: var(--font-weight-bold);
+            border: 1px solid var(--aia-red-20);
+        }
+
+        /* Stats Card Restructure */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
             border: 1px solid var(--border);
-            padding: 0.35rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            font-weight: var(--font-weight-medium);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform var(--transition-base);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
         }
 
         .header-actions { 
@@ -196,8 +223,39 @@
         /* Grid Layout */
         .main-grid {
             display: grid;
-            grid-template-columns: 1fr 380px;
+            grid-template-columns: 1fr 420px;
             gap: 1.5rem;
+            align-items: start;
+            margin-top: 1.5rem;
+        }
+
+        /* Fixed Header & Controls */
+        body {
+            padding-top: var(--header-height);
+        }
+
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: var(--bg-card);
+            border-bottom: 2px solid var(--aia-red-10);
+            box-shadow: var(--shadow);
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            padding: 0 2rem;
+            justify-content: space-between;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            width: 100%;
+            justify-content: space-between;
         }
 
         /* Cards */
@@ -396,6 +454,25 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
             white-space: nowrap;
+            position: sticky;
+            top: 80px; /* 고정 헤더 높이와 정확히 일치 */
+            z-index: 100;
+            box-shadow: inset 0 -1px 0 var(--border);
+        }
+
+        /* table-wrapper가 sticky를 방해하지 않도록 수정 */
+        .table-wrapper {
+            overflow: visible; /* sticky 동작을 위해 visible로 변경 */
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+        
+        /* Sidebar Sticky */
+        .sidebar {
+            position: sticky;
+            top: calc(var(--header-height) + 1.5rem); /* 헤더 아래 24px 여백 */
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
 
         .design-table td {
@@ -461,9 +538,51 @@
             border: 1px solid var(--border);
         }
 
+        .benefit-item {
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .benefit-item:hover {
+            border-color: var(--aia-red-40);
+            background: var(--bg-card);
+            transform: translateY(-2px);
+        }
+
+        tr.must-delete {
+            background: rgba(211, 17, 69, 0.05);
+        }
+
+        tr.must-delete .amount-input {
+            border: 2px dashed var(--aia-red) !important;
+            color: var(--aia-red);
+            background: white;
+        }
+
+        tr.must-delete .rider-name {
+            color: var(--aia-red);
+        }
+
         .rider-benefits {
             font-size: 0.75rem;
             color: var(--text-muted);
+        }
+
+        /* Base Amount Input in Benefit Card */
+        .base-amount-edit {
+            width: 120px;
+            padding: 2px 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: right;
+            margin-left: 4px;
+        }
+
+        .base-amount-edit:focus {
+            outline: none;
+            border-color: var(--aia-red);
         }
 
         /* Amount Input */
@@ -765,7 +884,27 @@
 
         /* History */
         .history-list {
-            margin: 1rem 0;
+            max-height: 250px;
+            overflow-y: auto;
+            margin: 0.5rem 0;
+            padding-right: 4px;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .history-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
         }
 
         .history-item {
@@ -1025,30 +1164,30 @@
     </style>
 </head>
 <body>
-    <header class="header">
+    <header class="app-header">
         <div class="logo">
-            <div class="logo-icon" role="img" aria-label="자동한도조정 아이콘">⚡</div>
+            <div class="logo-icon">⚡</div>
             <span class="logo-text">자동한도조정</span>
-            <span class="logo-badge">NGUP PRE v2</span>
+            <span class="logo-badge">NGUP PRE v2.5</span>
         </div>
-        <div class="header-actions">
-            <select 
-                class="scenario-selector" 
-                id="scenarioSelector" 
-                onchange="switchScenario(parseInt(this.value))"
-                aria-label="시나리오 선택">
+        <div class="header-actions" style="display: flex; align-items: center; gap: 1rem;">
+            <select class="scenario-selector" id="scenarioSelector" onchange="switchScenario(parseInt(this.value))" style="min-width: 250px;">
                 <option value="0">기본 시나리오</option>
-                <option value="1">실전 설계안 (종합보장)</option>
+                <option value="1">실전 설계안 (심사 1)</option>
+                <option value="2">실전 설계안 (종합 케이스_전체특약)</option>
+                <option value="3">실전 설계안 (암/신암진단 테스트)</option>
             </select>
-            <button class="btn btn-secondary" onclick="saveData()" aria-label="현재 설계 저장">💾 저장</button>
-            <button class="btn btn-secondary" onclick="exportData()" aria-label="데이터 내보내기">📤 내보내기</button>
-            <button class="btn btn-secondary" onclick="resetToOriginal()" aria-label="원래 금액으로 복원">↩️ 원복</button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-secondary" onclick="saveData()">💾 저장</button>
+                <button class="btn btn-secondary" onclick="exportData()">📤 내보내기</button>
+                <button class="btn btn-secondary" onclick="resetToOriginal()">↩️ 원복</button>
+            </div>
         </div>
     </header>
 
     <div class="container">
         <!-- Alert Banner -->
-        <div class="alert-banner hidden" id="alertBanner" role="alert" aria-live="polite">
+        <div class="alert-banner hidden" id="alertBanner" role="alert">
             <span class="alert-icon">⚠️</span>
             <div class="alert-content">
                 <div class="alert-title">조정 권장</div>
@@ -1056,7 +1195,7 @@
             </div>
         </div>
 
-        <!-- Stats Overview -->
+        <!-- Stats Overview (웅장한 버전) -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-value danger" id="violationCount">0</div>
@@ -1072,68 +1211,39 @@
             </div>
             <div class="stat-card">
                 <div class="stat-value info" id="totalPremium">0</div>
-                <div class="stat-label">월 보험료</div>
+                <div class="stat-label">월 보험료 (원)</div>
+            </div>
+        </div>
+
+        <!-- Hero Section (자동조정 큰 버튼) -->
+        <div class="card" style="margin-bottom: 2rem; border: 2px solid var(--aia-red-10);">
+            <div class="card-header" style="background: var(--bg-elevated);">
+                <span class="card-title">⚡ 자동한도조정</span>
+            </div>
+            <div class="card-body" style="padding: 2rem;">
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div>
+                        <label style="font-weight: 600; margin-bottom: 0.75rem; display: block;">조정 알고리즘 선택</label>
+                        <div class="algo-toggle-group" id="algoToggleGroup" style="width: 100%;">
+                            <button class="toggle-btn active" onclick="setAlgorithm(this, 'proportional')" style="flex: 1; padding: 1.25rem;">⚖️ 비례 감액</button>
+                            <button class="toggle-btn" onclick="setAlgorithm(this, 'greedy')" style="flex: 1; padding: 1.25rem;">💰 금액순 감액</button>
+                            <button class="toggle-btn" onclick="setAlgorithm(this, 'lifo')" style="flex: 1; padding: 1.25rem;">↩️ 역순 감액 (LIFO)</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-block" id="adjustBtn" onclick="autoAdjust()" style="padding: 1.5rem; font-size: 1.25rem; font-weight: 700; background: var(--aia-red); box-shadow: 0 8px 24px rgba(211, 17, 69, 0.25);">
+                        ⚡ 자동한도조정 실행
+                    </button>
+                    <p class="meta-text" style="text-align: center;">가입금액을 유지하면서 초과된 한도만 지능적으로 자동 조정합니다.</p>
+                </div>
             </div>
         </div>
 
         <div class="main-grid">
             <!-- Main Content -->
             <div>
-                <!-- Quick Action Panel -->
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">
-                            <span class="card-title-icon">⚡</span>
-                            자동한도조정
-                        </span>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label for="algoToggleGroup" style="font-weight: var(--font-weight-semibold); font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
-                                조정 알고리즘
-                            </label>
-                            <div class="algo-toggle-group" id="algoToggleGroup" role="radiogroup" aria-label="조정 알고리즘 선택">
-                                <button 
-                                    class="toggle-btn active" 
-                                    role="radio"
-                                    aria-checked="true"
-                                    data-value="proportional" 
-                                    onclick="setAlgorithm(this, 'proportional')">
-                                    ⚖️ 비례
-                                </button>
-                                <button 
-                                    class="toggle-btn" 
-                                    role="radio"
-                                    aria-checked="false"
-                                    data-value="greedy" 
-                                    onclick="setAlgorithm(this, 'greedy')">
-                                    💰 금액순
-                                </button>
-                                <button 
-                                    class="toggle-btn" 
-                                    role="radio"
-                                    aria-checked="false"
-                                    data-value="lifo" 
-                                    onclick="setAlgorithm(this, 'lifo')">
-                                    ↩️ 역순
-                                </button>
-                            </div>
-                        </div>
-                        <button 
-                            class="btn btn-primary btn-block" 
-                            id="adjustBtn"
-                            onclick="autoAdjust()"
-                            aria-label="자동한도조정 실행">
-                            ⚡ 자동한도조정 실행
-                        </button>
-                        <p class="meta-text" style="text-align: center; margin-top: 1rem;">
-                            현재 설정된 금액을 유지하면서 초과된 급부만 자동으로 감액합니다
-                        </p>
-                    </div>
-                </div>
 
                 <!-- Design Table -->
-                <div class="card">
+                <div class="card sticky-container">
                     <div class="card-header">
                         <span class="card-title">
                             <span class="card-title-icon">📋</span>
@@ -1336,12 +1446,12 @@
                         { id: 'R005', name: '입원일당특약', type: 'rider', amount: 50000, min: 10000, max: 100000, unit: 10000, benefits: ['B006'], period: '80세', payPeriod: '20년', premium: 32000 },
                     ],
                     benefits: [
-                        { id: 'B001', name: 'CI 급부', cap: 100000000 },
-                        { id: 'B002', name: '암 급부', cap: 80000000 },
-                        { id: 'B003', name: '뇌혈관 급부', cap: 50000000 },
-                        { id: 'B004', name: '심장 급부', cap: 50000000 },
-                        { id: 'B005', name: '수술 급부', cap: 30000000 },
-                        { id: 'B006', name: '입원 급부', cap: 100000 },
+                        { id: 'B001', name: 'CI 급부', cap: 100000000, baseAmount: 50000000 },
+                        { id: 'B002', name: '암 급부', cap: 80000000, baseAmount: 30000000 },
+                        { id: 'B003', name: '뇌혈관 급부', cap: 50000000, baseAmount: 0 },
+                        { id: 'B004', name: '심장 급부', cap: 50000000, baseAmount: 0 },
+                        { id: 'B005', name: '수술 급부', cap: 30000000, baseAmount: 0 },
+                        { id: 'B006', name: '입원 급부', cap: 100000, baseAmount: 0 },
                     ]
                 }
             },
@@ -1360,12 +1470,91 @@
                         { id: 'T007', name: '무배당 대수술특약', type: 'rider', amount: 20000000, min: 5000000, max: 30000000, unit: 5000000, benefits: ['BEN_SURGERY'], period: '90세', payPeriod: '20년', premium: 12000 },
                     ],
                     benefits: [
-                        { id: 'BEN_CANCER_TOTAL', name: '암 진단 합산', cap: 70000000 },
-                        { id: 'BEN_GEN_CANCER', name: '일반암 진단', cap: 60000000 },
-                        { id: 'BEN_2DAE', name: '2대질환 진단', cap: 50000000 },
-                        { id: 'BEN_BRAIN', name: '뇌혈관 진단', cap: 50000000 },
-                        { id: 'BEN_HEART', name: '심혈관 진단', cap: 50000000 },
-                        { id: 'BEN_SURGERY', name: '수술 보장', cap: 25000000 },
+                        { id: 'BEN_CANCER_TOTAL', name: '암 진단 합산', cap: 70000000, baseAmount: 0 },
+                        { id: 'BEN_GEN_CANCER', name: '일반암 진단', cap: 60000000, baseAmount: 0 },
+                        { id: 'BEN_2DAE', name: '2대질환 진단', cap: 50000000, baseAmount: 0 },
+                        { id: 'BEN_BRAIN', name: '뇌혈관 진단', cap: 50000000, baseAmount: 0 },
+                        { id: 'BEN_HEART', name: '심혈관 진단', cap: 50000000, baseAmount: 0 },
+                        { id: 'BEN_SURGERY', name: '수술 보장', cap: 25000000, baseAmount: 0 },
+                    ]
+                }
+            },
+            {
+                id: 2,
+                name: '실전 설계안 (종합 케이스_전체특약)',
+                data: {
+                    riders: [
+                        { id: 'M3_MAIN', name: '무배당 AIA 내가 조립하는 종합보장보험 2형', type: 'main', amount: 100000000, min: 10000000, max: 200000000, unit: 10000000, benefits: [], period: '90세', payPeriod: '20년', premium: 85000 },
+                        { id: 'M3_CDB_1', name: '무배당 AIA 암진단특약 2형 1종', type: 'rider', amount: 50000000, min: 10000000, max: 100000000, unit: 10000000, benefits: ['MXCDBADCIR', 'MXCDB', 'MXESCDB'], period: '90세', payPeriod: '20년', premium: 45000 },
+                        { id: 'M3_HADR_1', name: '무배당 AIA 급성심근경색증진단특약A 2형 1종', type: 'rider', amount: 50000000, min: 10000000, max: 100000000, unit: 10000000, benefits: ['MXHADRADCI', 'MXHADR'], period: '90세', payPeriod: '20년', premium: 32000 },
+                        { id: 'M3_CHDR_1', name: '무배당 AIA 뇌출혈진단특약A 2형 1종', type: 'rider', amount: 50000000, min: 10000000, max: 100000000, unit: 10000000, benefits: ['MXCHDRADCI', 'MXCHDR'], period: '90세', payPeriod: '20년', premium: 35000 },
+                        { id: 'M3_IHDR_1', name: '무배당 허혈성심장질환진단특약A 2형 1종', type: 'rider', amount: 20000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['MXIHDR'], period: '90세', payPeriod: '20년', premium: 18000 },
+                        { id: 'M3_CHDR1_1', name: '무배당 뇌혈관질환진단특약A 2형 1종', type: 'rider', amount: 20000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['MXCHDR1'], period: '90세', payPeriod: '20년', premium: 21000 },
+                        { id: 'M3_CIDR_1', name: '무배당 AIA 뇌경색증진단특약A 2형 1종', type: 'rider', amount: 20000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['MXCIDR'], period: '90세', payPeriod: '20년', premium: 19000 },
+                        { id: 'M3_ESCDB_1', name: '무배당 AIA 신암진단특약 2형 1종', type: 'rider', amount: 30000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['MXCDBADCIR', 'MXESCDB', 'MXCDB'], period: '90세', payPeriod: '20년', premium: 25000 },
+                        { id: 'M3_SR2_1', name: '무배당 AIA 뉴 수술특약A 2형 1종', type: 'rider', amount: 100000, min: 10000, max: 200000, unit: 10000, benefits: ['MXSR2'], period: '90세', payPeriod: '20년', premium: 12000 },
+                        { id: 'M3_HECR_1', name: '무배당 AIA 신 고액암특약 2형 1종', type: 'rider', amount: 50000000, min: 10000000, max: 100000000, unit: 10000000, benefits: ['MXHECR'], period: '90세', payPeriod: '20년', premium: 15000 },
+                        { id: 'M3_CDB_2', name: '무배당 암진단특약A (표준형) 2형', type: 'rider', amount: 30000000, min: 10000000, max: 50000000, unit: 5000000, benefits: ['MXCDBADCIR', 'MXCDB', 'MXESCDB'], period: '90세', payPeriod: '20년', premium: 28000 },
+                        { id: 'M3_HADR_2', name: '무배당 급성심근경색증진단특약A (해약환급금 미지급형) 2형', type: 'rider', amount: 30000000, min: 10000000, max: 50000000, unit: 5000000, benefits: ['MXHADRADCI', 'MXHADR'], period: '90세', payPeriod: '20년', premium: 22000 },
+                        { id: 'M3_CHDR_2', name: '무배당 뇌출혈진단특약A (해약환급금 미지급형) 2형', type: 'rider', amount: 30000000, min: 10000000, max: 50000000, unit: 5000000, benefits: ['MXCHDRADCI', 'MXCHDR'], period: '90세', payPeriod: '20년', premium: 24000 },
+                        { id: 'M3_CIDR_2', name: '무배당 뇌경색증진단특약A (해약환급금 미지급형) 2형', type: 'rider', amount: 10000000, min: 5000000, max: 30000000, unit: 5000000, benefits: ['MXCIDR'], period: '90세', payPeriod: '20년', premium: 8000 },
+                        { id: 'M3_HECR_2', name: '무배당 뉴 고액암특약A (해약환급금 미지급형) 2형', type: 'rider', amount: 30000000, min: 10000000, max: 50000000, unit: 5000000, benefits: ['MXHECR'], period: '90세', payPeriod: '20년', premium: 11000 },
+                        { id: 'M3_ESCDB4', name: '무배당 유방암전립선암특약A (해약환급금 미지급형) 2형', type: 'rider', amount: 20000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['MXESCDB'], period: '90세', payPeriod: '20년', premium: 6000 },
+                        { id: 'M3_OSSR_1', name: '무배당 뉴 실버특정 수술특약A (해약환급금 미지급형) 2형', type: 'rider', amount: 200000, min: 50000, max: 500000, unit: 50000, benefits: ['MXSSORALL'], period: '90세', payPeriod: '20년', premium: 15000 },
+                        { id: 'M3_SSOR_1', name: '무배당 AIA 질병수술특약 (갱신형) 2형', type: 'rider', amount: 200000, min: 50000, max: 500000, unit: 50000, benefits: ['MXSSORALL', 'MXSSOR'], period: '90세', payPeriod: '20년', premium: 12000 },
+                    ],
+                    benefits: [
+                        { id: 'MXCDBADCIR', name: '총일반암진단2', cap: 300000000, baseAmount: 250000000 },
+                        { id: 'MXCDB', name: '당사암진단합계', cap: 200000000, baseAmount: 150000000 },
+                        { id: 'MXESCDB', name: '총특정암진단합계', cap: 80000000, baseAmount: 50000000 },
+                        { id: 'MXHECR', name: '총고액암', cap: 100000000, baseAmount: 60000000 },
+                        { id: 'MXCHDRADCI', name: '총2대진단_뇌출혈', cap: 300000000, baseAmount: 310000000 },
+                        { id: 'MXCHDR', name: '뇌출혈진단', cap: 150000000, baseAmount: 100000000 },
+                        { id: 'MXCHDR1', name: '뇌혈관질환', cap: 40000000, baseAmount: 20000000 },
+                        { id: 'MXCIDR', name: '뇌경색증', cap: 25000000, baseAmount: 15000000 },
+                        { id: 'MXHADRADCI', name: '총2대진단_급성심근경색', cap: 300000000, baseAmount: 280000000 },
+                        { id: 'MXHADR', name: '급성심근경색', cap: 150000000, baseAmount: 100000000 },
+                        { id: 'MXIHDR', name: '허혈성진단', cap: 40000000, baseAmount: 20000000 },
+                        { id: 'MXSR2', name: '수술 보장', cap: 500000, baseAmount: 150000 },
+                        { id: 'MXSSORALL', name: '총질병수술', cap: 1000000, baseAmount: 200000 },
+                        { id: 'MXSSOR', name: '질병수술(단독)', cap: 1000000, baseAmount: 0 },
+                    ]
+                }
+            },
+            {
+                id: 3,
+                name: '실전 설계안 (암/신암진단 테스트)',
+                data: {
+                    riders: [
+                        { id: 'M4_MAIN', name: '무배당 AIA 내가 조립하는 종합보장보험 2형', type: 'main', amount: 100000000, min: 10000000, max: 200000000, unit: 10000000, benefits: [], period: '90세', payPeriod: '20년', premium: 85000 },
+                        { id: 'M4_CDB_1', name: '무배당 AIA 암진단특약 2형 1종', type: 'rider', amount: 50000000, min: 10000000, max: 100000000, unit: 10000000, benefits: ['MXCDBADCIR', 'MXCDB', 'MXESCDB'], period: '90세', payPeriod: '20년', premium: 45000 },
+                        { id: 'M4_HADR_1', name: '무배당 AIA 급성심근경색증진단특약A 2형 1종', type: 'rider', amount: 50000000, min: 10000000, max: 100000000, unit: 10000000, benefits: ['MXHADRADCI', 'MXHADR'], period: '90세', payPeriod: '20년', premium: 32000 },
+                        { id: 'M4_CHDR_1', name: '무배당 AIA 뇌출혈진단특약A 2형 1종', type: 'rider', amount: 50000000, min: 10000000, max: 100000000, unit: 10000000, benefits: ['MXCHDRADCI', 'MXCHDR'], period: '90세', payPeriod: '20년', premium: 35000 },
+                        { id: 'M4_IHDR_1', name: '무배당 허혈성심장질환진단특약A 2형 1종', type: 'rider', amount: 20000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['MXIHDR'], period: '90세', payPeriod: '20년', premium: 18000 },
+                        { id: 'M4_CHDR1_1', name: '무배당 뇌혈관질환진단특약A 2형 1종', type: 'rider', amount: 20000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['MXCHDR1'], period: '90세', payPeriod: '20년', premium: 21000 },
+                        { id: 'M4_CIDR_1', name: '무배당 AIA 뇌경색증진단특약A 2형 1종', type: 'rider', amount: 20000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['MXCIDR'], period: '90세', payPeriod: '20년', premium: 19000 },
+                        { id: 'M4_ESCDB_1', name: '무배당 AIA 신암진단특약 2형 1종', type: 'rider', amount: 30000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['MXCDBADCIR', 'MXESCDB', 'MXCDB', 'MXESCDB_INDIVIDUAL'], period: '90세', payPeriod: '20년', premium: 25000 },
+                        { id: 'M4_SR2_1', name: '무배당 AIA 뉴 수술특약A 2형 1종', type: 'rider', amount: 100000, min: 10000, max: 200000, unit: 10000, benefits: ['MXSR2'], period: '90세', payPeriod: '20년', premium: 12000 },
+                        { id: 'M4_HECR_1', name: '무배당 AIA 신 고액암특약 2형 1종', type: 'rider', amount: 50000000, min: 10000000, max: 100000000, unit: 10000000, benefits: ['MXHECR'], period: '90세', payPeriod: '20년', premium: 15000 },
+                        { id: 'M4_CDB_2', name: '무배당 암진단특약A (표준형) 2형', type: 'rider', amount: 30000000, min: 10000000, max: 50000000, unit: 5000000, benefits: ['MXCDBADCIR', 'MXCDB', 'MXESCDB'], period: '90세', payPeriod: '20년', premium: 28000 },
+                        { id: 'M4_HADR_2', name: '무배당 급성심근경색증진단특약A (미지급형) 2형', type: 'rider', amount: 30000000, min: 10000000, max: 50000000, unit: 5000000, benefits: ['MXHADRADCI', 'MXHADR'], period: '90세', payPeriod: '20년', premium: 22000 },
+                        { id: 'M4_CHDR_2', name: '무배당 뇌출혈진단특약A (미지급형) 2형', type: 'rider', amount: 30000000, min: 10000000, max: 50000000, unit: 5000000, benefits: ['MXCHDRADCI', 'MXCHDR'], period: '90세', payPeriod: '20년', premium: 24000 },
+                        { id: 'M4_CIDR_2', name: '무배당 뇌경색증진단특약A (미지급형) 2형', type: 'rider', amount: 10000000, min: 5000000, max: 30000000, unit: 5000000, benefits: ['MXCIDR'], period: '90세', payPeriod: '20년', premium: 8000 },
+                        { id: 'M4_HECR_2', name: '무배당 뉴 고액암특약A (미지급형) 2형', type: 'rider', amount: 30000000, min: 10000000, max: 50000000, unit: 5000000, benefits: ['MXHECR'], period: '90세', payPeriod: '20년', premium: 11000 },
+                        { id: 'M4_ESCDB4', name: '무배당 유방암전립선암특약A (미지급형) 2형', type: 'rider', amount: 20000000, min: 5000000, max: 50000000, unit: 5000000, benefits: ['MXESCDB'], period: '90세', payPeriod: '20년', premium: 6000 },
+                        { id: 'M4_OSSR_1', name: '무배당 뉴 실버특정 수술특약A (미지급형) 2형', type: 'rider', amount: 200000, min: 50000, max: 500000, unit: 50000, benefits: ['MXSSORALL'], period: '90세', payPeriod: '20년', premium: 15000 },
+                        { id: 'M4_SSOR_1', name: '무배당 AIA 질병수술특약 (갱신형) 2형', type: 'rider', amount: 200000, min: 50000, max: 500000, unit: 50000, benefits: ['MXSSORALL', 'MXSSOR'], period: '90세', payPeriod: '20년', premium: 12000 },
+                    ],
+                    benefits: [
+                        { id: 'MXCDBADCIR', name: '총일반암진단2', cap: 300000000, baseAmount: 250000000 },
+                        { id: 'MXCDB', name: '당사암진단합계', cap: 200000000, baseAmount: 150000000 },
+                        { id: 'MXESCDB', name: '총특정암진단합계', cap: 80000000, baseAmount: 50000000 },
+                        { id: 'MXESCDB_INDIVIDUAL', name: '신암진단 기계약합산', cap: 50000000, baseAmount: 30000000 },
+                        { id: 'MXHECR', name: '총고액암', cap: 100000000, baseAmount: 60000000 },
+                        { id: 'MXCHDRADCI', name: '총2대진단_뇌출혈', cap: 300000000, baseAmount: 310000000 },
+                        { id: 'MXHADRADCI', name: '총2대진단_급성심근경색', cap: 300000000, baseAmount: 280000000 },
+                        { id: 'MXSR2', name: '수술 보장', cap: 500000, baseAmount: 150000 },
+                        { id: 'MXSSORALL', name: '총질병수술', cap: 1000000, baseAmount: 200000 },
                     ]
                 }
             }
@@ -1384,6 +1573,16 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             switchScenario(0);
+            
+            // Sticky Header Scroll Effect
+            const stickyControls = document.getElementById('stickyControls');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 20) {
+                    stickyControls.classList.add('scrolled');
+                } else {
+                    stickyControls.classList.remove('scrolled');
+                }
+            });
         });
 
         function switchScenario(idx) {
@@ -1442,13 +1641,21 @@
                 const change = getChange(r);
                 const isSelected = selectedRiders.has(r.id);
                 const isLocked = lockedRiders.has(r.id);
+                
+                // 삭제 대상 여부 판단 (가입금액이 0원이고, 기계약 한도 위반 상황인 경우)
+                const isMustDelete = r.amount === 0 && r.type !== 'main' && r.benefits.some(bid => {
+                    const b = benefits.find(ben => ben.id === bid);
+                    const total = calculateBenefitTotal(bid);
+                    return b && total > b.cap;
+                });
+
                 const benefitNames = r.benefits.map(bid => {
                     const b = benefits.find(b => b.id === bid);
                     return b ? b.name : '';
                 }).join(', ');
                 
                 return `
-                    <tr class="${isLocked ? 'locked' : ''}" data-rider-id="${r.id}">
+                    <tr class="${isLocked ? 'locked' : ''} ${isMustDelete ? 'must-delete' : ''}" data-rider-id="${r.id}">
                         <td class="checkbox-cell">
                             <input 
                                 type="checkbox" 
@@ -1477,11 +1684,7 @@
                                 onkeydown="if(event.key==='Enter'){this.blur();}"
                                 ${isLocked ? 'disabled' : ''}
                                 aria-label="${r.name} 가입금액"
-                                aria-describedby="amount-help-${r.id}"
                                 title="최소: ${formatAmount(r.min)} / 최대: ${formatAmount(r.max)} / 단위: ${formatAmount(r.unit)}">
-                            <span class="sr-only" id="amount-help-${r.id}">
-                                최소 ${formatAmount(r.min)}, 최대 ${formatAmount(r.max)}, 단위 ${formatAmount(r.unit)}
-                            </span>
                         </td>
                         <td class="meta-text">${formatAmountShort(r.unit)}</td>
                         <td class="meta-text">${r.period}</td>
@@ -1513,6 +1716,17 @@
             }).join('');
         }
 
+        function highlightRiders(benefitId) {
+            selectedRiders.clear();
+            riders.forEach(r => {
+                if (r.benefits.includes(benefitId)) {
+                    selectedRiders.add(r.id);
+                }
+            });
+            render();
+            showToast('🎯', '관련 특약들이 선택되었습니다.');
+        }
+
         function getStatus(rider) {
             if (rider.benefits.length === 0) {
                 return { 
@@ -1522,6 +1736,9 @@
                 };
             }
             
+            let maxExcess = 0;
+            let worstStatus = null;
+
             for (const bid of rider.benefits) {
                 const benefit = benefits.find(b => b.id === bid);
                 if (!benefit) continue;
@@ -1529,12 +1746,19 @@
                 const total = calculateBenefitTotal(bid);
                 if (total > benefit.cap) {
                     const excess = total - benefit.cap;
-                    return { 
-                        class: 'over', 
-                        text: `+${formatAmountShort(excess)} 초과`,
-                        ariaLabel: `${formatAmountShort(excess)} 초과`
-                    };
+                    if (excess > maxExcess) {
+                        maxExcess = excess;
+                        worstStatus = { 
+                            class: 'over', 
+                            text: `+${formatAmountShort(excess)} 초과`,
+                            ariaLabel: `${formatAmountShort(excess)} 초과`
+                        };
+                    }
                 }
+            }
+            
+            if (worstStatus) {
+                return worstStatus;
             }
             
             return { 
@@ -1578,9 +1802,12 @@
                     .filter(r => r.benefits.includes(b.id))
                     .map(r => r.name)
                     .join(', ');
-                
+
                 return `
-                    <div class="benefit-item ${isOver ? 'over' : ''}" role="region" aria-label="${b.name} 사용 현황">
+                    <div class="benefit-item ${isOver ? 'over' : ''}" 
+                         onclick="highlightRiders('${b.id}')"
+                         role="button" 
+                         aria-label="${b.name} 관련 특약 선택">
                         <div class="benefit-header">
                             <span class="benefit-name">${b.name}</span>
                             <span class="benefit-percent" style="color: var(--${progressClass === 'ok' ? 'success' : progressClass === 'warning' ? 'warning' : 'danger'})">${pct.toFixed(0)}%</span>
@@ -1589,13 +1816,39 @@
                             <div class="progress-fill ${progressClass}" style="width: ${Math.min(pct, 100)}%"></div>
                         </div>
                         <div class="benefit-detail">
-                            <span>현재: ${formatAmountShort(total)}</span>
+                            <span>기계약: </span>
+                            <div style="display: flex; align-items: center;">
+                                <input type="number" 
+                                       class="base-amount-edit" 
+                                       value="${b.baseAmount}" 
+                                       step="10000"
+                                       onclick="event.stopPropagation()"
+                                       onchange="updateBaseAmount('${b.id}', this.value)"
+                                       aria-label="${b.name} 기계약 금액 수정">
+                                <span style="font-size: 0.75rem; margin-left: 2px; color: var(--text-muted)">원</span>
+                            </div>
+                        </div>
+                        <div class="benefit-detail">
+                            <span>설계합: ${formatAmountShort(total - b.baseAmount)}</span>
+                        </div>
+                        <div class="benefit-detail" style="margin-top: 4px; font-weight: bold; border-top: 1px dashed var(--border); padding-top: 4px;">
+                            <span>누적: ${formatAmountShort(total)}</span>
                             <span>한도: ${formatAmountShort(b.cap)}</span>
                         </div>
                         ${linkedRiders ? `<div class="benefit-riders">관련: ${linkedRiders}</div>` : ''}
                     </div>
                 `;
             }).join('');
+        }
+
+        function updateBaseAmount(benefitId, value) {
+            const benefit = benefits.find(b => b.id === benefitId);
+            if (benefit) {
+                const newValue = parseInt(value) || 0;
+                benefit.baseAmount = newValue;
+                render();
+                showToast('📝', `${benefit.name} 기계약 금액이 수정되었습니다.`);
+            }
         }
 
         function updateStats() {
@@ -1641,19 +1894,26 @@
         }
 
         function updateAlertBanner() {
-            const violations = benefits.filter(b => {
+            let maxExcess = 0;
+            let worstViolation = null;
+
+            for (const b of benefits) {
                 const total = calculateBenefitTotal(b.id);
-                return total > b.cap;
-            });
+                if (total > b.cap) {
+                    const excess = total - b.cap;
+                    if (excess > maxExcess) {
+                        maxExcess = excess;
+                        worstViolation = { benefit: b, excess: excess };
+                    }
+                }
+            }
             
             const banner = document.getElementById('alertBanner');
             const message = document.getElementById('alertMessage');
             
-            if (violations.length > 0) {
-                const first = violations[0];
-                const total = calculateBenefitTotal(first.id);
-                const excess = total - first.cap;
-                message.textContent = `'${first.name}' 급부가 ${formatAmountShort(first.cap)} 한도를 ${formatAmountShort(excess)} 초과했습니다.`;
+            if (worstViolation) {
+                const { benefit, excess } = worstViolation;
+                message.textContent = `'${benefit.name}' 급부가 ${formatAmountShort(benefit.cap)} 한도를 ${formatAmountShort(excess)} 초과했습니다. (기계약 포함)`;
                 banner.classList.remove('hidden');
             } else {
                 banner.classList.add('hidden');
@@ -1661,9 +1921,12 @@
         }
 
         function calculateBenefitTotal(benefitId) {
-            return riders
+            const benefit = benefits.find(b => b.id === benefitId);
+            const baseAmount = benefit ? (benefit.baseAmount || 0) : 0;
+            const designAmount = riders
                 .filter(r => r.benefits.includes(benefitId))
                 .reduce((sum, r) => sum + r.amount, 0);
+            return baseAmount + designAmount;
         }
 
         // Selection & Locking
@@ -1775,18 +2038,20 @@
             
             let iterations = 0;
             const maxIter = 100;
+            const unresolvable = new Set(); // 해결 불가능한 급부 추적
             const algoName = currentAlgo === 'greedy' ? 'Greedy (금액순)' : currentAlgo === 'lifo' ? 'LIFO (역순)' : '비례 감액';
             
             addLog(`자동한도조정 시작 (방법: ${algoName})`, 'info');
             
             setTimeout(() => {
                 while (iterations < maxIter) {
-                    const violation = findViolation();
+                    const violation = findViolation(unresolvable);
                     if (!violation) break;
                     
                     const { benefitId, excess } = violation;
-                    const benefitName = benefits.find(b => b.id === benefitId)?.name;
-                    const benefitCap = benefits.find(b => b.id === benefitId)?.cap;
+                    const benefit = benefits.find(b => b.id === benefitId);
+                    const benefitName = benefit?.name;
+                    const benefitCap = benefit?.cap;
                     const currentTotal = calculateBenefitTotal(benefitId);
                     
                     addLog(`[문제 정의] '${benefitName}' 한도 초과! (한도: ${formatAmountShort(benefitCap)} / 현재: ${formatAmountShort(currentTotal)} / 초과: +${formatAmountShort(excess)})`, 'warning');
@@ -1802,8 +2067,9 @@
                     }
                     
                     if (!hasChanged) {
-                        addLog(`=> ⚠️ 더 이상 감액할 수 있는 특약이 없습니다. (최소가입금액 또는 잠금)`, 'error');
-                        break;
+                        addLog(`=> ⚠️ '${benefitName}' 급부는 더 이상 감액할 수 있는 특약이 없어 건너뜁니다.`, 'error');
+                        unresolvable.add(benefitId);
+                        continue; // 루프 중단하지 않고 다음 위반으로 점프
                     }
                     
                     iterations++;
@@ -1813,11 +2079,18 @@
                 
                 if (changedCount > 0) {
                     addLog(`✅ 조정 완료: 총 ${changedCount}개 특약 감액 처리됨`, 'success');
+                    if (findViolation()) {
+                        addLog(`⚠️ 참고: 일부 급부가 기계약 금액(${formatAmountShort(findViolation().excess)} 초과)만으로 이미 한도를 넘어 완벽한 해결이 불가능합니다.`, 'error');
+                    }
                     addHistory('adjustment', `${algoName} 실행 (${changedCount}개 특약 조정)`);
                     showToast('✅', `자동한도조정 완료! ${changedCount}개 특약 조정됨`);
                 } else {
-                    addLog(`✅ 조정 불필요: 모든 급부가 한도 내에 있습니다.`, 'success');
-                    showToast('✅', '조정 불필요 - 모든 급부가 정상 범위입니다');
+                    if (findViolation()) {
+                        addLog(`⚠️ 기계약만으로 한도 초과 상태입니다. (더 이상 감액할 특약이 없습니다)`, 'error');
+                    } else {
+                        addLog(`✅ 조정 불필요: 모든 급부가 한도 내에 있습니다.`, 'success');
+                        showToast('✅', '조정 불필요 - 모든 급부가 정상 범위입니다');
+                    }
                 }
                 
                 adjustBtn.disabled = false;
@@ -1826,169 +2099,175 @@
             }, 100);
         }
 
-        function findViolation() {
+        function findViolation(ignoreSet = new Set()) {
+            let maxExcess = 0;
+            let worstViolation = null;
+
             for (const b of benefits) {
+                if (ignoreSet.has(b.id)) continue;
                 const total = calculateBenefitTotal(b.id);
                 if (total > b.cap) {
-                    return { benefitId: b.id, excess: total - b.cap };
+                    const excess = total - b.cap;
+                    if (excess > maxExcess) {
+                        maxExcess = excess;
+                        worstViolation = { benefitId: b.id, excess: excess };
+                    }
                 }
             }
-            return null;
+            return worstViolation;
         }
 
         function resolveViolationProportional(benefitId, excess, benefitName) {
-            const linkedRiders = riders
+            const benefit = benefits.find(b => b.id === benefitId);
+            
+            // 1단계: 정상 감액 시도 (min까지)
+            const reducibleRiders = riders
                 .filter(r => r.benefits.includes(benefitId) && r.type === 'rider' && r.amount > r.min && !lockedRiders.has(r.id));
             
-            if (linkedRiders.length === 0) {
-                addLog(`   => 감액 대상 특약 없음 (모두 최소가입금액 도달 또는 잠금)`, 'error');
-                return false;
-            }
-            
-            const contributions = {};
-            let totalContribution = 0;
-            for (const rider of linkedRiders) {
-                contributions[rider.id] = rider.amount;
-                totalContribution += rider.amount;
-            }
-            
-            addLog(`   => [분석] 감액 대상 ${linkedRiders.length}개 발견 (총 기여금액: ${formatAmountShort(totalContribution)})`, 'info');
-            
-            if (totalContribution === 0) return false;
-            
-            let remaining = excess;
-            let hasChanged = false;
-            
-            for (const rider of linkedRiders) {
-                if (remaining <= 0) break;
-                const ratio = contributions[rider.id] / totalContribution;
-                let targetReduce = Math.floor(excess * ratio);
-                
-                const reducible = rider.amount - rider.min;
-                let reduceAmount = Math.min(targetReduce, reducible);
-                
-                let actualReduce = 0;
-                if (rider.unit > 0) {
-                    const unitsNeeded = Math.ceil(reduceAmount / rider.unit);
-                    actualReduce = unitsNeeded * rider.unit;
-                } else {
-                    actualReduce = reduceAmount;
+            if (reducibleRiders.length > 0) {
+                addLog(`   => [분석] 감액 대상 ${reducibleRiders.length}개 발견 (대상: ${reducibleRiders.map(r => r.name).join(', ')})`, 'info');
+                const contributions = {};
+                let totalContribution = 0;
+                for (const rider of reducibleRiders) {
+                    contributions[rider.id] = rider.amount;
+                    totalContribution += rider.amount;
                 }
-                actualReduce = Math.min(actualReduce, reducible);
                 
-                if (actualReduce > 0) {
-                    applyReduction(rider, actualReduce, `비례(${(ratio * 100).toFixed(1)}%)`);
-                    remaining -= actualReduce;
-                    hasChanged = true;
-                }
-            }
-            
-            if (remaining > 0) {
-                addLog(`   => [잔여] 비례 배분 후 잔여 초과분 ${formatAmountShort(remaining)} 처리 시작`, 'info');
-                for (const rider of linkedRiders) {
+                let remaining = excess;
+                let hasChanged = false;
+                
+                for (const rider of reducibleRiders) {
                     if (remaining <= 0) break;
-                    const reducible = rider.amount - rider.min;
-                    if (reducible <= 0) continue;
+                    const ratio = contributions[rider.id] / totalContribution;
+                    let targetReduce = Math.floor(excess * ratio);
                     
-                    const unitsNeeded = Math.ceil(remaining / rider.unit);
-                    let actualReduce = Math.min(unitsNeeded * rider.unit, reducible);
+                    const reducible = rider.amount - rider.min;
+                    let actualReduce = Math.min(targetReduce, reducible);
+                    
+                    if (rider.unit > 0) {
+                        actualReduce = Math.ceil(actualReduce / rider.unit) * rider.unit;
+                    }
+                    actualReduce = Math.min(actualReduce, reducible);
                     
                     if (actualReduce > 0) {
-                        applyReduction(rider, actualReduce, `잔여분 추가 감액`);
+                        applyReduction(rider, actualReduce, `비례감액`);
                         remaining -= actualReduce;
                         hasChanged = true;
                     }
                 }
+                if (hasChanged) return true;
             }
-            return hasChanged;
+
+            // 2단계: 감액으로 해결이 안 될 경우 0원 처리 (Tier 2)
+            const candidates = riders
+                .filter(r => r.benefits.includes(benefitId) && r.type === 'rider' && r.amount > 0 && !lockedRiders.has(r.id));
+            
+            if (candidates.length > 0) {
+                addLog(`[임계치 도달] '${benefitName}' 한도 초과가 감액만으로 해결되지 않습니다. 관련 특약을 삭제(0원) 처리합니다.`, 'warning');
+                candidates.forEach(r => {
+                    const before = r.amount;
+                    r.amount = 0;
+                    addLog(`   => ${r.name}: ${formatAmountShort(before)} → 0원 (삭제 조정)`, 'success');
+                });
+                return true;
+            }
+
+            addLog(`   => ⚠️ 해결 실패: 모든 관련 특약이 최소금액이거나 잠금 상태입니다.`, 'error');
+            return false;
         }
 
         function resolveViolationGreedy(benefitId, excess, benefitName) {
-            const linkedRiders = riders
-                .filter(r => r.benefits.includes(benefitId) && r.type === 'rider' && r.amount > r.min && !lockedRiders.has(r.id))
-                .sort((a, b) => {
-                    const unitA = a.unit > 0 ? a.unit : 1;
-                    const unitB = b.unit > 0 ? b.unit : 1;
-                    
-                    const efficiencyA = Math.floor((a.amount - a.min) / unitA);
-                    const efficiencyB = Math.floor((b.amount - b.min) / unitB);
-                    
-                    if (efficiencyA !== efficiencyB) return efficiencyB - efficiencyA;
-                    if (a.amount !== b.amount) return b.amount - a.amount;
-                    
-                    return 0;
-                });
-
-            if (linkedRiders.length === 0) {
-                addLog(`   => 감액 대상 특약 없음`, 'error');
-                return false;
-            }
+            const benefit = benefits.find(b => b.id === benefitId);
             
-            const topRider = linkedRiders[0];
-            const topEff = Math.floor((topRider.amount - topRider.min) / (topRider.unit || 1));
-            addLog(`   => [분석] 감액 효율이 가장 높은 '${topRider.name}'(E=${topEff}) 선택`, 'info');
+            // 1단계: 정상 감액 시도 (Greedy 방식, min까지)
+            const reducibleRiders = riders
+                .filter(r => r.benefits.includes(benefitId) && r.type === 'rider' && r.amount > r.min && !lockedRiders.has(r.id))
+                .sort((a, b) => b.amount - a.amount); // 금액 큰 순서대로
+            
+            if (reducibleRiders.length > 0) {
+                addLog(`   => [분석] 금액순 감액 대상 ${reducibleRiders.length}개 발견 (대상: ${reducibleRiders.map(r => r.name).join(', ')})`, 'info');
+                let remaining = excess;
+                let hasChanged = false;
 
-            let remaining = excess;
-            let hasChanged = false;
+                for (const rider of reducibleRiders) {
+                    if (remaining <= 0) break;
+                    const reducible = rider.amount - rider.min;
+                    let targetReduce = Math.min(remaining, reducible);
+                    
+                    if (rider.unit > 0) {
+                        targetReduce = Math.ceil(targetReduce / rider.unit) * rider.unit;
+                    }
+                    let actualReduce = Math.min(targetReduce, reducible);
 
-            for (const rider of linkedRiders) {
-                if (remaining <= 0) break;
-
-                const reducible = rider.amount - rider.min;
-                let targetReduce = Math.min(remaining, reducible);
-
-                let actualReduce = 0;
-                if (rider.unit > 0) {
-                    const unitsNeeded = Math.ceil(targetReduce / rider.unit);
-                    actualReduce = unitsNeeded * rider.unit;
-                } else {
-                    actualReduce = targetReduce;
+                    if (actualReduce > 0) {
+                        applyReduction(rider, actualReduce, `금액순 우선`);
+                        remaining -= actualReduce;
+                        hasChanged = true;
+                    }
                 }
-                actualReduce = Math.min(actualReduce, reducible); 
-
-                if (actualReduce > 0) {
-                    applyReduction(rider, actualReduce, `금액순 우선`);
-                    remaining -= actualReduce;
-                    hasChanged = true;
-                }
+                if (hasChanged) return true;
             }
-            return hasChanged;
+
+            // 2단계: 해결 불가 시 0원 처리
+            const candidates = riders
+                .filter(r => r.benefits.includes(benefitId) && r.type === 'rider' && r.amount > 0 && !lockedRiders.has(r.id));
+            
+            if (candidates.length > 0) {
+                addLog(`[임계치 도달] Greedy 조정으로도 해결되지 않아 관련 특약을 삭제 처리합니다.`, 'warning');
+                candidates.forEach(r => {
+                    r.amount = 0;
+                    addLog(`   => ${r.name}: 0원 조정`, 'success');
+                });
+                return true;
+            }
+            return false;
         }
 
         function resolveViolationLIFO(benefitId, excess, benefitName) {
-            const linkedRiders = riders
+            const benefit = benefits.find(b => b.id === benefitId);
+            
+            // 1단계: 정상 감액 시도 (LIFO 방식, min까지)
+            const reducibleRiders = riders
                 .filter(r => r.benefits.includes(benefitId) && r.type === 'rider' && r.amount > r.min && !lockedRiders.has(r.id))
-                .reverse(); 
+                .reverse(); // 역순
+            
+            if (reducibleRiders.length > 0) {
+                addLog(`   => [분석] LIFO 감액 대상 ${reducibleRiders.length}개 발견 (대상: ${reducibleRiders.map(r => r.name).join(', ')})`, 'info');
+                let remaining = excess;
+                let hasChanged = false;
 
-            if (linkedRiders.length === 0) return false;
+                for (const rider of reducibleRiders) {
+                    if (remaining <= 0) break;
+                    const reducible = rider.amount - rider.min;
+                    let targetReduce = Math.min(remaining, reducible);
+                    
+                    if (rider.unit > 0) {
+                        targetReduce = Math.ceil(targetReduce / rider.unit) * rider.unit;
+                    }
+                    let actualReduce = Math.min(targetReduce, reducible);
 
-            addLog(`   => [분석] 가장 나중 특약 '${linkedRiders[0].name}' 선택`, 'info');
-
-            let remaining = excess;
-            let hasChanged = false;
-
-            for (const rider of linkedRiders) {
-                if (remaining <= 0) break;
-
-                const reducible = rider.amount - rider.min;
-                let targetReduce = Math.min(remaining, reducible);
-
-                let actualReduce = 0;
-                if (rider.unit > 0) {
-                    const unitsNeeded = Math.ceil(targetReduce / rider.unit);
-                    actualReduce = unitsNeeded * rider.unit;
-                } else {
-                    actualReduce = targetReduce;
+                    if (actualReduce > 0) {
+                        applyReduction(rider, actualReduce, `역순 원칙`);
+                        remaining -= actualReduce;
+                        hasChanged = true;
+                    }
                 }
-                actualReduce = Math.min(actualReduce, reducible);
-
-                if (actualReduce > 0) {
-                    applyReduction(rider, actualReduce, `역순 원칙`);
-                    remaining -= actualReduce;
-                    hasChanged = true;
-                }
+                if (hasChanged) return true;
             }
-            return hasChanged;
+
+            // 2단계: 해결 불가 시 0원 처리
+            const candidates = riders
+                .filter(r => r.benefits.includes(benefitId) && r.type === 'rider' && r.amount > 0 && !lockedRiders.has(r.id));
+            
+            if (candidates.length > 0) {
+                addLog(`[임계치 도달] LIFO 조정으로도 해결되지 않아 관련 특약을 삭제 처리합니다.`, 'warning');
+                candidates.forEach(r => {
+                    r.amount = 0;
+                    addLog(`   => ${r.name}: 0원 조정`, 'success');
+                });
+                return true;
+            }
+            return false;
         }
 
         function applyReduction(rider, amount, reason) {
@@ -2046,6 +2325,7 @@
             const time = new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' });
             history.unshift({ type, message, time });
             if (history.length > 20) history = history.slice(0, 20);
+            renderHistory(); // 이력이 추가될 때 즉시 렌더링
         }
 
         function renderHistory() {
@@ -2067,6 +2347,7 @@
         function addLog(msg, type = 'info') {
             const time = new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
             logs.push({ time, msg, type });
+            renderLogs(); // 로그가 추가될 때 즉시 렌더링
         }
 
         function resetLogs() {

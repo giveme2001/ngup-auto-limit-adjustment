@@ -73,7 +73,7 @@ class Rider:
         return self.current_amount - self.min_amount
 
 
-@dataclass
+@dataclass 
 class Benefit:
     """
     급부 정보
@@ -82,10 +82,12 @@ class Benefit:
         benefit_id: 급부 고유 ID
         name: 급부명
         cap: 급부 한도 (캡)
+        base_amount: 기계약 가입금액 (기설계분)
     """
     benefit_id: str
     name: str
     cap: int
+    base_amount: int = 0
 
 
 @dataclass 
@@ -234,17 +236,23 @@ class AutoLimitAdjuster:
         return result
     
     def _find_violation(self) -> Optional[Tuple[str, int]]:
-        """첫 번째 제약 위반 탐지 (기존 방식)"""
+        """가장 심각한(최대 초과) 제약 위반 탐지"""
+        worst_violation = None
+        max_excess = 0
+
         for benefit_id, benefit in self.benefits.items():
             total = self._calculate_benefit_total(benefit_id)
             
             if total > benefit.cap:
                 excess = total - benefit.cap
-                return (benefit_id, excess)
-        return None
+                if excess > max_excess:
+                    max_excess = excess
+                    worst_violation = (benefit_id, excess)
+        
+        return worst_violation
 
     def _get_all_violations(self) -> Dict[str, int]:
-        """모든 제약 위반 탐지 (Global Greedy용)"""
+        """모든 제약 위반 탐지 (위반 금액 큰 순서)"""
         violations = {}
         for benefit_id, benefit in self.benefits.items():
             total = self._calculate_benefit_total(benefit_id)
@@ -253,12 +261,11 @@ class AutoLimitAdjuster:
         return violations
     
     def _calculate_benefit_total(self, benefit_id: str) -> int:
-        """특정 급부의 총 기여 금액 계산 (캐시 활용 가능 시 증분값 아님 - 초기화용)"""
-        # 만약 최적화 모드이고 캐시가 있다면 캐시 반환? 
-        # 아니오, 초기화나 검증용이므로 직접 계산.
-        total = 0
-        rider_ids = self.benefit_riders.get(benefit_id, [])
+        """특정 급부의 총 기여 금액 계산 (기계약 포함)"""
+        benefit = self.benefits[benefit_id]
+        total = benefit.base_amount # 기계약 금액부터 시작
         
+        rider_ids = self.benefit_riders.get(benefit_id, [])
         for rid in rider_ids:
             rider = self.riders[rid]
             total += rider.get_contribution(benefit_id)
@@ -586,18 +593,35 @@ class AutoLimitAdjuster:
 # 테스트
 # ============================================================
 
-def create_test_data():
+def create_test_data_scenario_4():
+    """Scenario 4: 신암진단 복합 정책 (기계약 3천 + 설계 3천, 한도 5천)"""
     riders = [
-        # Case 2: Multi-Benefit Greedy Test
-        # R001: B001, B002 동시 위반 (V=2) -> 우선 감액 대상이어야 함
+        # 신암진단특약 (현재 3천, 기계약 3천 합산 시 6천 -> 1천 초과 발생 예상)
+        Rider("M4_ESCDB_1", "무배당 AIA 신암진단특약", 30000000, 10000000, 50000000, 5000000, 
+              benefit_ids=["MXCDBADCIR", "MXESCDB", "MXCDB", "MXESCDB_INDIVIDUAL"]),
+        # 일반암특약 (한도 내 정상)
+        Rider("M4_CDB_1", "무배당 AIA 암진단특약", 20000000, 5000000, 50000000, 5000000, 
+              benefit_ids=["MXCDBADCIR", "MXESCDB", "MXCDB"]),
+    ]
+    
+    benefits = [
+        # 신암진단 개별 한도 (기계약 3,000만 포함)
+        Benefit("MXESCDB_INDIVIDUAL", "신암진단 기계약합산", cap=50000000, base_amount=30000000),
+        # 당사암진단 합계 (기계약 없음)
+        Benefit("MXCDB", "당사암진단합계", cap=100000000, base_amount=0),
+    ]
+    return riders, benefits
+
+def create_test_data():
+    """기존 테스트 데이터 (하이브리드 위반)"""
+    riders = [
         Rider("R001", "다중위반특약", 50000000, 10000000, 100000000, 10000000, benefit_ids=["B001", "B002"], contribution_ratios={"B001": 1.0, "B002": 1.0}),
-        # R002: B001만 위반 (V=1)
         Rider("R002", "단일위반특약", 50000000, 10000000, 50000000, 10000000, benefit_ids=["B001"], contribution_ratios={"B001": 1.0}),
     ] 
     
     benefits = [
-        Benefit("B001", "급부1", 40000000), # R001(5천)+R002(5천)=1억 -> 6천 초과
-        Benefit("B002", "급부2", 40000000), # R001(5천)=5천 -> 1천 초과
+        Benefit("B001", "급부1", 40000000), 
+        Benefit("B002", "급부2", 40000000),
     ]
     return riders, benefits
 
@@ -613,29 +637,32 @@ def run_tests():
         ("lifo", "LIFO (역순)")
     ]
     
-    for method_code, method_name in methods:
-        print(f"\n[테스트] {method_name}")
-        print("-" * 40)
-        
-        riders, benefits = create_test_data()
-        engine = AutoLimitAdjuster(riders, benefits)
-        
-        # 조정 전 상태 출력 (첫 번째만)
-        if method_code == "proportional":
-            print("조정 전 상태:")
-            for r in riders: 
-                lock_status = "[LOCKED]" if r.is_locked else ""
-                print(f"  - {r.name}{lock_status}: {r.current_amount:,}원")
-        
-        result = engine.adjust(method=method_code)
-        
-        if result.success:
-            print(f"결과: 성공 (총 감액 {result.total_reduction:,}원)")
-            for rid, (before, after, diff) in result.changes.items():
-                rider = engine.riders[rid]
-                print(f"  {rider.name}: {before:,} → {after:,} ({diff:,})")
-        else:
-            print(f"결과: 실패 ({result.error})")
+    test_cases = [
+        (create_test_data, "기존 다중 위반 케이스"),
+        (create_test_data_scenario_4, "Scenario 4 (신암진단 기계약 합산 정책)")
+    ]
+
+    for data_func, case_name in test_cases:
+        print(f"\n[테스트 케이스] {case_name}")
+        for method_code, method_name in methods:
+            print(f"\n방법: {method_name}")
+            print("-" * 30)
+            
+            riders, benefits = data_func()
+            engine = AutoLimitAdjuster(riders, benefits)
+            
+            result = engine.adjust(method=method_code)
+            
+            if result.success:
+                print(f"결과: 성공 (총 감액 {result.total_reduction:,}원)")
+                if result.changes:
+                    for rid, (before, after, diff) in result.changes.items():
+                        rider = engine.riders[rid]
+                        print(f"  {rider.name}: {before:,} → {after:,} ({diff:,})")
+                else:
+                    print("  변경 사항 없음")
+            else:
+                print(f"결과: 실패 ({result.error})")
 
     print("\n" + "=" * 60)
 
